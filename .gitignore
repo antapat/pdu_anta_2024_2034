@@ -13,3 +13,6 @@ rsconnect/
 .httr-oauth
 .DS_Store
 .quarto
+.env
+.Renviron
+datos_supabase.R

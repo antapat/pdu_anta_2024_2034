@@ -741,6 +741,33 @@ ui <- page_navbar(
               h5(class = "fw-bold mt-4", style = "color: #1B4D3E;", icon("file-lines"), " Base Legal y Reglamentaria"),
               p("D.S. N° 012-2022-VIVIENDA (Reglamento de Acondicionamiento Territorial y Desarrollo Urbano Sostenible - RATDUS), Reglamento Nacional de Edificaciones (RNE) y Ordenanzas Provinciales de la Municipalidad Provincial de Anta.")
             )
+          ),
+          div(
+            class = "col-12",
+            div(
+              class = "p-4 bg-white rounded-3 border",
+              h5(class = "fw-bold", style = "color: #1B4D3E;", icon("gavel"), " Normativa asociada a la planificación urbana"),
+              p(class = "text-muted", "Marco normativo de referencia del PDU de Anta, resumido a partir de los documentos de la carpeta normativa:"),
+              tags$ul(
+                class = "mb-3",
+                tags$li(
+                  tags$b("Ley N.º 31313 — Ley de Desarrollo Urbano Sostenible: "),
+                  "establece el marco nacional para el acondicionamiento territorial, la planificación urbana y la gestión del suelo, con principios de sostenibilidad, equidad, participación y gestión del riesgo.",
+                  " ", tags$a("Ver texto oficial", href = "https://busquedas.elperuano.pe/dispositivo/NL/1976352-2", target = "_blank", rel = "noopener")
+                ),
+                tags$li(
+                  tags$b("D.S. N.º 012-2022-VIVIENDA — RATDUS: "),
+                  "reglamenta los procesos e instrumentos de planificación, incluido el PDU y sus etapas de formulación, participación, aprobación, implementación y actualización.",
+                  " ", tags$a("Ver norma en el MVCS", href = "https://www.gob.pe/institucion/vivienda/normas-legales/3588833-012-2022-vivienda", target = "_blank", rel = "noopener")
+                ),
+                tags$li(
+                  tags$b("D.Leg. N.º 1674: "),
+                  "modifica la Ley N.º 31313 y refuerza la planificación urbana y rural, la gestión del suelo, la participación ciudadana y la gestión del riesgo.",
+                  " ", tags$a("Ver texto oficial", href = "https://busquedas.elperuano.pe/dispositivo/NL/2329855-10", target = "_blank", rel = "noopener")
+                )
+              ),
+              p(class = "small text-muted mb-0", "El PDU aplica este marco mediante su zonificación, clasificación del suelo, parámetros urbanísticos y sistema vial. Para un trámite o predio concreto, revise también la ordenanza provincial de aprobación y las normas sectoriales pertinentes.")
+            )
           )
         )
       )
