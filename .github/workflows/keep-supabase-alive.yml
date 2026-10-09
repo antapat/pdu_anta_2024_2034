@@ -1,0 +1,108 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Cada 3 días a las 05:00 UTC (00:00 en Perú).
+    - cron: "0 5 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-supabase-alive
+  cancel-in-progress: false
+
+jobs:
+  ping-supabase:
+    name: Verificar API y PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      PGHOST: ${{ secrets.SUPABASE_HOST }}
+      PGPORT: ${{ secrets.SUPABASE_PORT }}
+      PGDATABASE: ${{ secrets.SUPABASE_DB }}
+      PGUSER: ${{ secrets.SUPABASE_USER }}
+      PGPASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
+      PGSSLMODE: require
+      PGCONNECT_TIMEOUT: "15"
+
+    steps:
+      - name: Validar configuración requerida
+        shell: bash
+        run: |
+          missing=()
+          for name in \
+            SUPABASE_URL SUPABASE_PUBLISHABLE_KEY \
+            PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
+          do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Faltan GitHub Actions Secrets: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Ping al API Gateway y Auth
+        shell: bash
+        run: |
+          echo "Verificando Supabase Auth..."
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --connect-timeout 15 \
+            --max-time 30 \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_PUBLISHABLE_KEY" \
+            "$SUPABASE_URL/auth/v1/health"
+          echo
+          echo "Supabase Auth respondió correctamente."
+
+      - name: Consultar RPC pública de métricas
+        shell: bash
+        run: |
+          echo "Verificando PostgREST mediante get_metricas_geovisor..."
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --connect-timeout 15 \
+            --max-time 30 \
+            --request POST \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_PUBLISHABLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            "$SUPABASE_URL/rest/v1/rpc/get_metricas_geovisor"
+          echo
+          echo "PostgREST respondió correctamente."
+
+      - name: Instalar cliente PostgreSQL si es necesario
+        shell: bash
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          psql --version
+
+      - name: Ping directo a PostgreSQL por Session pooler
+        shell: bash
+        run: |
+          echo "Ejecutando consulta ligera en PostgreSQL..."
+          psql \
+            --no-psqlrc \
+            --set=ON_ERROR_STOP=1 \
+            --command="SELECT 1 AS alive, current_database() AS database_name;"
+          echo "PostgreSQL respondió correctamente."
