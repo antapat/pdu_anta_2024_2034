@@ -6,17 +6,17 @@
 
 :root {
   /* Colores primarios */
-  --verde-inst: #1B4D3E;
-  --verde-hover: #143C30;
-  --verde-oscuro: #0F2D24;
-  --verde-claro: #EBF3EF;
-  --verde-borde: #CFE0D7;
+  --verde-inst: #174A3A;
+  --verde-hover: #10392D;
+  --verde-oscuro: #0B2B22;
+  --verde-claro: #EEF5F1;
+  --verde-borde: #C9DBD2;
   
   /* Dorado y Acentos */
-  --dorado-inst: #C59B27;
-  --dorado-oscuro: #9E7812;
-  --dorado-fondo: #FDF9EE;
-  --dorado-borde: #EEDB9A;
+  --dorado-inst: #B68A2C;
+  --dorado-oscuro: #86651F;
+  --dorado-fondo: #FBF7EB;
+  --dorado-borde: #E5D39F;
   
   /* Estados */
   --rojo-alerta: #D32F2F;
@@ -27,10 +27,10 @@
   --azul-fondo: #EFF6FF;
   
   /* Tipografía y Neutros */
-  --texto-principal: #1E293B;
-  --texto-secundario: #475569;
-  --texto-muted: #64748B;
-  --bg-app: #F8FAFC;
+  --texto-principal: #17251F;
+  --texto-secundario: #41534B;
+  --texto-muted: #687870;
+  --bg-app: #F4F7F5;
   --bg-card: #FFFFFF;
   --border-card: #E2E8F0;
   
@@ -50,6 +50,11 @@ body {
   color: var(--texto-principal);
   background-color: var(--bg-app);
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  color: #FFFFFF;
+  background: var(--verde-inst);
 }
 
 /* --------------------------------------------------------------------------
@@ -155,9 +160,9 @@ body {
 }
 
 .status-pill-online {
-  background-color: #EBF8EE;
-  color: #198754;
-  border-color: #A3E6B5;
+  background-color: #EAF5EF;
+  color: #17603F;
+  border-color: #A9D2BC;
 }
 
 .status-pill-offline {
@@ -290,6 +295,134 @@ body {
   color: var(--texto-principal);
   border-bottom: 1px solid #E2E8F0;
   vertical-align: middle;
+}
+
+/* --------------------------------------------------------------------------
+   CATÁLOGO NORMATIVO: PRESENTACIÓN EJECUTIVA E INSTITUCIONAL
+   -------------------------------------------------------------------------- */
+.catalogo-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg) !important;
+  border-top: 4px solid var(--verde-inst) !important;
+  box-shadow: 0 12px 32px rgba(11, 43, 34, 0.08) !important;
+}
+
+.catalogo-title {
+  color: var(--verde-oscuro);
+  letter-spacing: -0.35px;
+}
+
+.catalogo-title svg,
+.catalogo-title .fa,
+.catalogo-title .fas {
+  color: var(--dorado-inst);
+}
+
+.catalogo-kpi {
+  min-height: 78px;
+  background: linear-gradient(145deg, #FFFFFF, #F1F5F3);
+  border-color: #D7E2DC !important;
+  box-shadow: 0 2px 8px rgba(11, 43, 34, 0.05);
+}
+
+.catalogo-kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 42px;
+  box-shadow: 0 3px 9px rgba(11, 43, 34, 0.16);
+}
+
+.catalogo-kpi-icon--green {
+  background: var(--verde-inst);
+}
+
+.catalogo-kpi-icon--gold {
+  background: var(--dorado-inst);
+}
+
+.catalogo-kpi-icon--dark {
+  background: var(--verde-oscuro);
+}
+
+.catalogo-table-wrap {
+  border: 1px solid #CBD8D1;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.catalogo-table {
+  min-width: 1120px;
+  margin-bottom: 0 !important;
+  color: var(--texto-principal);
+  font-size: 0.84rem;
+  --bs-table-hover-bg: #EAF2EE;
+  --bs-table-hover-color: var(--texto-principal);
+}
+
+/* Bootstrap colorea cada celda, por eso el fondo debe aplicarse al th. */
+.catalogo-table > thead > tr > th {
+  background: linear-gradient(180deg, #1D5745 0%, var(--verde-inst) 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #2F6756 !important;
+  border-bottom: 3px solid var(--dorado-inst) !important;
+  padding: 0.82rem 0.72rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.catalogo-table > tbody > tr > td {
+  background-color: #FFFFFF;
+  border-color: #DEE7E2;
+  padding: 0.76rem 0.72rem;
+  line-height: 1.45;
+  vertical-align: middle;
+}
+
+.catalogo-table > tbody > tr:nth-child(even) > td {
+  background-color: #F5F8F6;
+}
+
+.catalogo-table > tbody > tr:hover > td {
+  background-color: #EAF2EE !important;
+}
+
+.catalogo-table th:nth-child(2),
+.catalogo-table td:nth-child(2) {
+  min-width: 210px;
+}
+
+.catalogo-table th:last-child,
+.catalogo-table td:last-child {
+  min-width: 245px;
+}
+
+.catalogo-table .badge.bg-secondary {
+  background-color: #51655C !important;
+}
+
+.catalogo-table .badge.text-bg-warning {
+  color: #593F08 !important;
+  background-color: #F2D98B !important;
+  border: 1px solid #D3AF45;
+}
+
+.alert-warning {
+  color: #5E430B !important;
+  background-color: var(--dorado-fondo) !important;
+  border-color: var(--dorado-borde) !important;
+}
+
+#ui_metricas_publicas .badge {
+  color: #3E5148 !important;
+  background-color: #F1F5F3 !important;
+  border-color: #D3DED8 !important;
 }
 
 /* Indicadores de Ámbito */

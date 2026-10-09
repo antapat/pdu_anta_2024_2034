@@ -279,7 +279,7 @@ ui <- page_navbar(
       class = "d-flex flex-column",
       div(
         class = "d-flex align-items-center flex-wrap gap-2",
-        span(class = "fw-bold fs-5", style = "color: #1B4D3E; letter-spacing: -0.3px;", "GEOVISOR PDU ANTA"),
+        span(class = "fw-bold fs-5", style = "color: #174A3A; letter-spacing: -0.3px;", "GEOVISOR PDU ANTA"),
         span(class = "pdu-badge-title", "2024 - 2034"),
         span(
           class = "badge d-none d-sm-inline-flex align-items-center gap-1",
@@ -299,8 +299,8 @@ ui <- page_navbar(
   theme = bs_theme(
     version = 5,
     bootswatch = "flatly",
-    primary = "#1F5137",
-    secondary = "#52616B",
+    primary = "#174A3A",
+    secondary = "#4C5E56",
     base_font = font_google("Inter")
   ),
   header = tags$head(
@@ -377,7 +377,7 @@ ui <- page_navbar(
       fillable = TRUE,
       sidebar = sidebar(
         width = 410,
-        title = div(class = "fw-bold", style = "color: #1F5137;", icon("sliders"), " Panel de Consulta"),
+        title = div(class = "fw-bold", style = "color: #174A3A;", icon("sliders"), " Panel de Consulta"),
         
         # Botón GPS móvil nativo
         tags$button(
@@ -519,13 +519,12 @@ ui <- page_navbar(
     div(
       class = "container py-4",
       div(
-        class = "card shadow-sm border-0 mb-4 p-4",
-        style = "background-color: #FFFFFF; border-radius: var(--radius-md);",
+        class = "card shadow-sm border-0 mb-4 p-4 catalogo-card",
         
         div(
           class = "d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3",
           div(
-            h3(class = "fw-bold mb-1", style = "color: #1B4D3E;", icon("book-open"), " Catálogo de Zonificación y Parámetros Urbanísticos"),
+            h3(class = "fw-bold mb-1 catalogo-title", icon("book-open"), " Catálogo de Zonificación y Parámetros Urbanísticos"),
             p(class = "text-muted mb-0", "Parámetros técnicos y edificatorios aprobados para cada tipología dentro del ámbito del PDU Anta 2024 - 2034.")
           ),
           div(
@@ -547,8 +546,8 @@ ui <- page_navbar(
           div(
             class = "col-md-4 col-sm-6",
             div(
-              class = "p-3 rounded-3 border bg-light d-flex align-items-center gap-3",
-              div(class = "p-2 rounded-2 bg-success text-white", icon("layer-group", class = "fs-4")),
+              class = "p-3 rounded-3 border d-flex align-items-center gap-3 catalogo-kpi",
+              div(class = "p-2 rounded-2 text-white catalogo-kpi-icon catalogo-kpi-icon--green", icon("layer-group", class = "fs-4")),
               div(
                 tags$small(class = "text-muted text-uppercase fw-bold", "Total Subzonas"),
                 tags$h4(class = "mb-0 fw-bold", as.character(nrow(df_parametros)))
@@ -558,8 +557,8 @@ ui <- page_navbar(
           div(
             class = "col-md-4 col-sm-6",
             div(
-              class = "p-3 rounded-3 border bg-light d-flex align-items-center gap-3",
-              div(class = "p-2 rounded-2 text-white", style = "background-color: #C59B27;", icon("gavel", class = "fs-4")),
+              class = "p-3 rounded-3 border d-flex align-items-center gap-3 catalogo-kpi",
+              div(class = "p-2 rounded-2 text-white catalogo-kpi-icon catalogo-kpi-icon--gold", icon("gavel", class = "fs-4")),
               div(
                 tags$small(class = "text-muted text-uppercase fw-bold", "Marco Normativo"),
                 tags$h4(class = "mb-0 fw-bold", "RATDUS / RNE")
@@ -569,8 +568,8 @@ ui <- page_navbar(
           div(
             class = "col-md-4 col-sm-12",
             div(
-              class = "p-3 rounded-3 border bg-light d-flex align-items-center gap-3",
-              div(class = "p-2 rounded-2 text-white", style = "background-color: #0E382B;", icon("circle-check", class = "fs-4")),
+              class = "p-3 rounded-3 border d-flex align-items-center gap-3 catalogo-kpi",
+              div(class = "p-2 rounded-2 text-white catalogo-kpi-icon catalogo-kpi-icon--dark", icon("circle-check", class = "fs-4")),
               div(
                 tags$small(class = "text-muted text-uppercase fw-bold", "Aprobación Oficial"),
                 tags$h5(class = "mb-0 fw-bold", "04 de abril del 2025")
@@ -582,7 +581,7 @@ ui <- page_navbar(
         hr(class = "my-2"),
         
         div(
-          class = "table-responsive mt-3",
+          class = "table-responsive mt-3 catalogo-table-wrap",
           uiOutput("ui_tabla_catalogo_dinamica")
         )
       )
@@ -2308,7 +2307,7 @@ server <- function(input, output, session) {
       span(
         class = "status-pill-cloud status-pill-online d-none d-md-inline-flex",
         title = paste("Infraestructura Cloud activa vía", toupper(info$modo), paste0("(", info$latencia_ms, " ms)")),
-        icon("cloud-check"), paste0("Cloud DB Activa (", toupper(info$modo), ")")
+        icon("database"), paste0("Cloud DB Activa (", toupper(info$modo), ")")
       )
     } else {
       span(
@@ -2488,9 +2487,8 @@ server <- function(input, output, session) {
     }
     
     tags$table(
-      class = "table table-hover table-striped align-middle",
+      class = "table table-hover align-middle catalogo-table",
       tags$thead(
-        style = "background-color: #1B4D3E; color: white;",
         tags$tr(
           tags$th("Código"),
           tags$th("Subzona"),
