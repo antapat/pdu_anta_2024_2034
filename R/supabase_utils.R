@@ -377,7 +377,10 @@ supabase_rpc_metricas <- function(funcion, payload = NULL) {
         } else {
           DBI::dbGetQuery(con, "SELECT * FROM public.get_metricas_geovisor()")
         }
-      }, error = function(e) NULL)
+      }, error = function(e) {
+        warning("Error en RPC de métricas por PostgreSQL: ", conditionMessage(e), call. = FALSE)
+        NULL
+      })
       if (!is.null(resultado) && nrow(resultado) > 0) {
         return(supabase_normalizar_metricas(resultado))
       }
@@ -399,7 +402,10 @@ supabase_rpc_metricas <- function(funcion, payload = NULL) {
           httr2::req_timeout(4)
         resp <- httr2::req_perform(req)
         httr2::resp_body_json(resp, simplifyVector = TRUE)
-      }, error = function(e) NULL)
+      }, error = function(e) {
+        warning("Error en RPC de métricas por REST: ", conditionMessage(e), call. = FALSE)
+        NULL
+      })
       if (!is.null(resultado)) return(supabase_normalizar_metricas(resultado))
     }
   }

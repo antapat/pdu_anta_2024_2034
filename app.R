@@ -2276,7 +2276,7 @@ server <- function(input, output, session) {
     if (nzchar(visitante_id)) {
       metricas_supa(supabase_registrar_visita(visitante_id))
     }
-  }, once = TRUE, ignoreInit = TRUE)
+  }, once = TRUE, ignoreInit = FALSE)
 
   output$ui_metricas_publicas <- renderUI({
     metricas <- metricas_supa()
