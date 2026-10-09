@@ -16,3 +16,6 @@ rsconnect/
 .env
 .Renviron
 datos_supabase.R
+# Datos espaciales locales: se almacenan en Supabase, no en GitHub.
+/data/
+/shp_pdu_anta/
