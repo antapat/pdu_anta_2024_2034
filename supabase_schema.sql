@@ -2,6 +2,8 @@
 -- ESQUEMA SQL PARA SUPABASE - GEOVISOR PDU ANTA (2024 - 2034)
 -- Ejecutar este script en el SQL Editor de su proyecto de Supabase
 -- Proyecto: GeoVisor PDU Anta (Posit Connect Cloud / connect.posit.cloud/patantampa)
+-- NOTA: para instalaciones nuevas use, en orden, los archivos versionados de
+-- supabase/migrations. Este archivo se conserva únicamente por compatibilidad.
 -- ==============================================================================
 
 -- 1. EXTENSIÓN UUID (Si no está habilitada)
@@ -64,12 +66,10 @@ CREATE TABLE IF NOT EXISTS public.reportes_ciudadanos (
 -- Habilitar Row Level Security (RLS)
 ALTER TABLE public.reportes_ciudadanos ENABLE ROW LEVEL SECURITY;
 
--- Política: Permitir a cualquier ciudadano insertar su reporte
-CREATE POLICY "Permitir registro ciudadano anonimo" 
-    ON public.reportes_ciudadanos 
-    FOR INSERT 
-    TO anon, authenticated 
-    WITH CHECK (true);
+-- El servicio ya no recibe aportes u observaciones desde el GeoVisor.
+-- Se conserva la tabla únicamente para no perder registros históricos.
+DROP POLICY IF EXISTS "Permitir registro ciudadano anonimo" ON public.reportes_ciudadanos;
+REVOKE INSERT ON TABLE public.reportes_ciudadanos FROM anon, authenticated;
 
 -- Política: Lectura solo para administradores autenticados
 CREATE POLICY "Lectura de reportes para administradores" 

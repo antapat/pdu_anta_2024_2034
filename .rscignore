@@ -1,6 +1,7 @@
 .Rproj.user
 .codex_spreadsheet
 outputs
+data/*.rds
 ejemplos
 scripts
 tests

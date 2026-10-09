@@ -4,6 +4,13 @@
 #           Urbano Sostenible, del distrito de Anta, provincia de Anta, Cusco
 # ==============================================================================
 
+# En desarrollo local, recargar la configuración ignorada por Git antes de
+# inicializar cualquier cliente. En Posit Connect las variables se administran
+# como secretos del despliegue y este archivo no se publica.
+if (file.exists(".Renviron")) {
+  readRenviron(".Renviron")
+}
+
 suppressPackageStartupMessages({
   library(shiny)
   library(bslib)
@@ -30,10 +37,15 @@ source("R/supabase_utils.R", local = TRUE)
 # Las rutas de Chrome/Pandoc se resuelven desde el entorno de despliegue.
 
 # ------------------------------------------------------------------------------
-# 0. CARGA DE DATOS OPTIMIZADOS Y CONSTANTES
+# 0. CARGA DE DATOS OFICIALES DESDE SUPABASE/POSTGIS Y CONSTANTES
 # ------------------------------------------------------------------------------
-capas <- readRDS("data/pdu_capas_optimizadas.rds")
-df_parametros <- readRDS("data/parametros_urbanisticos.rds")
+datos_supabase <- supabase_cargar_datos_espaciales()
+capas <- datos_supabase$capas
+df_parametros <- datos_supabase$parametros
+message(
+  "GeoVisor iniciado con fuente espacial ", datos_supabase$origen, ": ",
+  paste(names(datos_supabase$conteos), datos_supabase$conteos, sep = "=", collapse = ", ")
+)
 
 # Paleta de colores oficial para zonificación (por subzona y macrozona) y vías
 colores_subzonas <- capas$colores_subzonas
@@ -274,7 +286,8 @@ ui <- page_navbar(
           style = "background-color: #FDF9EE; color: #78350F; border: 1px solid #C59B27; font-size: 0.72rem; font-weight: 600; padding: 3px 8px; border-radius: 4px;",
           icon("calendar-check"), " Aprobado: 04 de abril del 2025"
         ),
-        uiOutput("ui_status_supabase_pill", inline = TRUE)
+        uiOutput("ui_status_supabase_pill", inline = TRUE),
+        uiOutput("ui_metricas_publicas", inline = TRUE)
       ),
       tags$small(
         class = "text-muted d-flex align-items-center gap-1",
@@ -333,6 +346,19 @@ ui <- page_navbar(
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
       }
+    ")),
+    tags$script(HTML("
+      document.addEventListener('shiny:connected', function() {
+        var storageKey = 'pdu_anta_visitante_id';
+        var visitorId = localStorage.getItem(storageKey);
+        if (!visitorId) {
+          visitorId = (window.crypto && window.crypto.randomUUID)
+            ? window.crypto.randomUUID()
+            : 'pdu-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+          localStorage.setItem(storageKey, visitorId);
+        }
+        Shiny.setInputValue('visitante_geovisor_id', visitorId, {priority: 'event'});
+      });
     ")),
     tags$style(HTML("
       .leaflet-container { height: calc(100vh - 82px) !important; }
@@ -563,8 +589,9 @@ ui <- page_navbar(
     )
   ),
   
-  # --- PESTAÑA 4: BUZÓN CIUDADANO Y OBSERVACIONES (INTEGRADO CON SUPABASE) ---
-  nav_panel(
+  # El antiguo buzón ciudadano queda deshabilitado: el GeoVisor es un servicio
+  # de consulta informativa y no un canal para recepción de aportes.
+  if (FALSE) nav_panel(
     title = "Buzón y Observaciones",
     value = "tab_buzon",
     icon = icon("envelope-open-text"),
@@ -1561,12 +1588,7 @@ server <- function(input, output, session) {
       } else {
         div(class = "alert alert-secondary py-2 px-3 small mb-0",
             "La constancia informativa se consulta directamente en la pestaña Reporte Informativo.")
-      },
-      actionButton(
-        "btn_ir_a_buzon_con_predio", "💬 Dejar Observación / Consulta",
-        class = "btn btn-outline-success fw-bold w-100",
-        icon = icon("comment-dots")
-      )
+      }
     )
   })
   
@@ -2227,6 +2249,17 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       generar_constancia_pdf(file)
+      metricas_supa(supabase_registrar_constancia())
+    }
+  )
+
+  output$btn_descargar_pdf_tab <- downloadHandler(
+    filename = function() {
+      paste0("Constancia_Informativa_PDU_Anta_", format(Sys.time(), "%Y%m%d_%H%M"), ".pdf")
+    },
+    content = function(file) {
+      generar_constancia_pdf(file)
+      metricas_supa(supabase_registrar_constancia())
     }
   )
   
@@ -2234,6 +2267,35 @@ server <- function(input, output, session) {
   # 2.7 MÓDULO REACTIVO SUPABASE, BUZÓN CIUDADANO Y CATÁLOGO DINÁMICO
   # ----------------------------------------------------------------------------
   
+  # Contadores públicos persistentes. La visita se deduplica en Supabase por
+  # navegador y día; no se almacena IP ni información personal.
+  metricas_supa <- reactiveVal(supabase_obtener_metricas())
+
+  observeEvent(input$visitante_geovisor_id, {
+    visitante_id <- trimws(as.character(input$visitante_geovisor_id))
+    if (nzchar(visitante_id)) {
+      metricas_supa(supabase_registrar_visita(visitante_id))
+    }
+  }, once = TRUE, ignoreInit = TRUE)
+
+  output$ui_metricas_publicas <- renderUI({
+    metricas <- metricas_supa()
+    if (is.null(metricas) || is.na(metricas$visitas_total)) return(NULL)
+
+    tagList(
+      span(
+        class = "badge bg-light text-dark border d-none d-lg-inline-flex align-items-center gap-1",
+        title = "Visitas únicas aproximadas por navegador y día",
+        icon("eye"), format(metricas$visitas_total, big.mark = ",", scientific = FALSE), " visitas"
+      ),
+      span(
+        class = "badge bg-light text-dark border d-none d-lg-inline-flex align-items-center gap-1",
+        title = "Constancias informativas generadas",
+        icon("file-pdf"), format(metricas$constancias_total, big.mark = ",", scientific = FALSE), " constancias"
+      )
+    )
+  })
+
   # Estado de Supabase en memoria reactiva
   estado_supa <- reactive({
     supabase_ping()
@@ -2251,8 +2313,8 @@ server <- function(input, output, session) {
     } else {
       span(
         class = "status-pill-cloud status-pill-offline d-none d-md-inline-flex",
-        title = "Operando con datos locales optimizados. No se detectaron credenciales en el entorno.",
-        icon("circle-info"), "Modo Autónomo Local"
+        title = "Las capas PostGIS fueron cargadas al iniciar; el servicio auxiliar de métricas no responde.",
+        icon("triangle-exclamation"), "PostGIS cargado / métricas sin conexión"
       )
     }
   })

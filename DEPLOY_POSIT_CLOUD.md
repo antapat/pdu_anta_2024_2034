@@ -6,9 +6,9 @@ Esta guía detalla los pasos para publicar y operar el **GeoVisor PDU Anta (2024
 
 ## 1. Arquitectura de la Solución
 
-El proyecto está preparado para ejecutarse tanto en entornos Cloud como en estaciones de trabajo locales:
+El proyecto usa Supabase/PostGIS como fuente espacial obligatoria:
 - **`app.R`**: Interfaz Shiny moderna con diseño institucional (`bslib` Bootstrap 5), mapa Leaflet con capas interactivas y generación de constancias.
-- **`R/supabase_utils.R`**: Módulo de conexión híbrida a Supabase (PostgreSQL nativo con `RPostgres` y REST con `httr2`), con tolerancia a fallos (Modo Autónomo Local si no hay internet o credenciales).
+- **`R/supabase_utils.R`**: carga las ocho capas espaciales y la matriz urbanística directamente desde Supabase/PostGIS. La aplicación no inicia si la fuente oficial no está disponible.
 - **`supabase_schema.sql`**: Esquema SQL con tablas para auditoría de consultas (`consultas_pdu`), buzón ciudadano (`reportes_ciudadanos`) y comunicados oficiales (`avisos_municipales`).
 - **`manifest.json`**: Manifiesto precalculado con todas las 96 dependencias exactas para despliegue automatizado sin fallos de compilación en Linux.
 - **`constancia_pdu_template.qmd`**: Plantilla Quarto con compilación directa en **Typst** (nativa en Posit Connect Cloud sin requerir Chrome ni LaTeX pesado).
@@ -24,22 +24,22 @@ Para que la aplicación interactúe con tu proyecto de Supabase en Posit Connect
 3. Ve a la pestaña **«Settings»** -> **«Environment Variables»**.
 4. Agrega las siguientes variables:
 
-### Opción A (Recomendada: PostgreSQL Directo con PostGIS):
+### Conexión obligatoria: PostgreSQL directo con PostGIS
 | Variable | Descripción | Ejemplo / Valor |
 |---|---|---|
-| `SUPABASE_HOST` | Host de base de datos Supabase | `aws-0-sa-east-1.pooler.supabase.com` |
+| `SUPABASE_HOST` | Host directo o del pooler mostrado por Supabase | `<host de Connect>` |
 | `SUPABASE_DB` | Base de datos | `postgres` |
 | `SUPABASE_PORT` | Puerto de conexión | `5432` o `6543` |
-| `SUPABASE_USER` | Usuario Postgres | `postgres.biosgkmmkjylceckzmcu` |
+| `SUPABASE_USER` | Usuario mostrado por Supabase | `postgres.<project-ref>` |
 | `SUPABASE_PASSWORD` | Contraseña de Supabase | *(tu contraseña secreta)* |
 
-### Opción B (API REST PostgREST):
+### Variables REST opcionales para métricas y RPC
 | Variable | Descripción | Ejemplo / Valor |
 |---|---|---|
-| `SUPABASE_URL` | URL de tu proyecto Supabase | `https://biosgkmmkjylceckzmcu.supabase.co` |
-| `SUPABASE_ANON_KEY` | Llave anónima pública de Supabase | *(llave anon de Project Settings -> API)* |
+| `SUPABASE_URL` | URL de tu proyecto Supabase | `https://psteqbwnyavrmwdiiaht.supabase.co` |
+| `SUPABASE_PUBLISHABLE_KEY` | Clave publicable de Supabase para métricas REST/RPC | *(publishable key de Project Settings -> API Keys)* |
 
-> **Nota de Seguridad:** Si no se configuran estas variables, la aplicación **no arrojará errores**; entrará automáticamente en **Modo Autónomo Local**, permitiendo que todas las consultas territoriales y descargas de PDF funcionen sin interrupción.
+> **Importante:** `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` no sustituyen la conexión PostgreSQL para las capas espaciales. Sin las cinco variables PostgreSQL la aplicación se detendrá deliberadamente, evitando mostrar información local desactualizada. No configure `SUPABASE_SECRET_KEY` en el cliente ni la incluya en Git.
 
 ---
 

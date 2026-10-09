@@ -62,45 +62,54 @@ con <- DBI::dbConnect(
   connect_timeout = 10
 )
 tryCatch({
-if (!isTRUE(DBI::dbGetQuery(con, "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis') AS disponible")$disponible[[1]])) {
-  stop("PostGIS no está habilitado. Ejecute la migración SQL primero.")
-}
+  if (!isTRUE(DBI::dbGetQuery(con, "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis') AS disponible")$disponible[[1]])) {
+    stop("PostGIS no está habilitado. Ejecute la migración SQL primero.")
+  }
+  if (!DBI::dbExistsTable(con, DBI::Id(schema = "public", table = "pdu_importaciones"))) {
+    stop("No existe public.pdu_importaciones. Ejecute la migración 001 antes de cargar datos.")
+  }
 
-commit_fuente <- Sys.getenv("GITHUB_SHA", unset = NA_character_)
-for (clave in names(capas_destino)) {
-  objeto <- capas[[clave]]
-  if (!inherits(objeto, "sf")) stop("La capa '", clave, "' no es un objeto sf.")
-  objeto <- sf::st_transform(objeto, 4326)
-  tabla <- unname(capas_destino[[clave]])
-  identificador <- as.character(DBI::dbQuoteIdentifier(
-    con, DBI::Id(schema = "public", table = tabla)
-  ))
-  DBI::dbExecute(con, paste("DROP TABLE IF EXISTS", identificador))
-  sf::st_write(objeto, con, layer = DBI::Id(schema = "public", table = tabla),
-               quiet = TRUE)
-  DBI::dbExecute(con, paste("ALTER TABLE", identificador, "ENABLE ROW LEVEL SECURITY"))
-  DBI::dbExecute(con, paste("REVOKE ALL ON TABLE", identificador, "FROM anon, authenticated"))
-  DBI::dbExecute(
-    con,
-    "INSERT INTO public.pdu_importaciones (conjunto, filas, commit_fuente) VALUES ($1, $2, $3)",
-    params = list(tabla, nrow(objeto), commit_fuente)
-  )
-  message("Cargada ", tabla, ": ", nrow(objeto), " filas")
-}
+  DBI::dbWithTransaction(con, {
+    commit_fuente <- Sys.getenv("GITHUB_SHA", unset = NA_character_)
+    for (clave in names(capas_destino)) {
+      objeto <- capas[[clave]]
+      if (!inherits(objeto, "sf")) stop("La capa '", clave, "' no es un objeto sf.")
+      objeto <- sf::st_transform(objeto, 4326)
+      tabla <- unname(capas_destino[[clave]])
+      tabla_id <- DBI::Id(schema = "public", table = tabla)
+      identificador <- as.character(DBI::dbQuoteIdentifier(con, tabla_id))
+      indice <- as.character(DBI::dbQuoteIdentifier(con, paste0(tabla, "_geometry_gix")))
+      geometria <- as.character(DBI::dbQuoteIdentifier(con, attr(objeto, "sf_column")))
 
-DBI::dbWriteTable(
-  con, DBI::Id(schema = "public", table = "parametros_urbanisticos"),
-  parametros, overwrite = TRUE, row.names = FALSE
-)
-tabla_parametros <- as.character(DBI::dbQuoteIdentifier(
-  con, DBI::Id(schema = "public", table = "parametros_urbanisticos")
-))
-DBI::dbExecute(con, paste("ALTER TABLE", tabla_parametros, "ENABLE ROW LEVEL SECURITY"))
-DBI::dbExecute(con, paste("REVOKE ALL ON TABLE", tabla_parametros, "FROM anon, authenticated"))
-DBI::dbExecute(
-  con,
-  "INSERT INTO public.pdu_importaciones (conjunto, filas, commit_fuente) VALUES ($1, $2, $3)",
-  params = list("parametros_urbanisticos", nrow(parametros), commit_fuente)
-)
-message("Carga terminada. Las capas siguen privadas para anon/authenticated.")
+      DBI::dbExecute(con, paste("DROP TABLE IF EXISTS", identificador))
+      sf::st_write(objeto, con, layer = tabla_id, quiet = TRUE)
+      DBI::dbExecute(con, paste("CREATE INDEX", indice, "ON", identificador, "USING GIST", paste0("(", geometria, ")")))
+      DBI::dbExecute(con, paste("ALTER TABLE", identificador, "ENABLE ROW LEVEL SECURITY"))
+      DBI::dbExecute(con, paste("REVOKE ALL ON TABLE", identificador, "FROM anon, authenticated"))
+      DBI::dbExecute(con, paste("ANALYZE", identificador))
+      DBI::dbExecute(
+        con,
+        "INSERT INTO public.pdu_importaciones (conjunto, filas, commit_fuente) VALUES ($1, $2, $3)",
+        params = list(tabla, nrow(objeto), commit_fuente)
+      )
+      message("Cargada ", tabla, ": ", nrow(objeto), " filas")
+    }
+
+    parametros_id <- DBI::Id(schema = "public", table = "parametros_urbanisticos")
+    DBI::dbWriteTable(con, parametros_id, parametros, overwrite = TRUE, row.names = FALSE)
+    tabla_parametros <- as.character(DBI::dbQuoteIdentifier(con, parametros_id))
+    indice_parametros <- as.character(DBI::dbQuoteIdentifier(con, "parametros_urbanisticos_cod_s_zona_idx"))
+    codigo_subzona <- as.character(DBI::dbQuoteIdentifier(con, "COD_S_ZONA"))
+    DBI::dbExecute(con, paste("CREATE INDEX", indice_parametros, "ON", tabla_parametros, paste0("(", codigo_subzona, ")")))
+    DBI::dbExecute(con, paste("ALTER TABLE", tabla_parametros, "ENABLE ROW LEVEL SECURITY"))
+    DBI::dbExecute(con, paste("REVOKE ALL ON TABLE", tabla_parametros, "FROM anon, authenticated"))
+    DBI::dbExecute(con, paste("ANALYZE", tabla_parametros))
+    DBI::dbExecute(
+      con,
+      "INSERT INTO public.pdu_importaciones (conjunto, filas, commit_fuente) VALUES ($1, $2, $3)",
+      params = list("parametros_urbanisticos", nrow(parametros), commit_fuente)
+    )
+  })
+  message("Carga terminada y validada. Supabase/PostGIS es la fuente espacial de la aplicación.")
 }, finally = DBI::dbDisconnect(con))
+

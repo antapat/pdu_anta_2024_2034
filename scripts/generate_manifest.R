@@ -12,8 +12,6 @@ app_files <- c(
   "constancia_pdu_template.qmd",
   "R/spatial_utils.R",
   "R/supabase_utils.R",
-  "data/pdu_capas_optimizadas.rds",
-  "data/parametros_urbanisticos.rds",
   "www/custom.css",
   "www/escudo_muni_anta.png",
   "www/pdu_actualizado_sf.png",
