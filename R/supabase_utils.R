@@ -93,10 +93,28 @@ supabase_tablas_espaciales <- function() {
 
 supabase_colores_zonas <- function() {
   c(
-    ZDA = "#C86868", ZDM = "#F67777", ZDB = "#F2964C", ZDMB = "#E5E64B",
-    ZI = "#B2AECB", `ZSPC-E` = "#A9CEEC", `ZSPC-S` = "#99D5D2",
-    ZRP = "#BEDB92", ZOU = "#BCBDBE", ZA = "#EFF6D3", ZPA = "#80C880",
-    ZRE = "#CB7B9E", ZM = "#DDD4CE"
+    ZDA = "#C97876", ZDM = "#D99384", ZDB = "#D8A36C", ZDMB = "#D5C66F",
+    ZI = "#8D94AD", `ZSPC-E` = "#8FB5CA", `ZSPC-S` = "#7FB7AE",
+    ZRP = "#A8C486", ZOU = "#A6AEB0", ZA = "#DDE7C3", ZPA = "#6FA27A",
+    ZRE = "#B47B96", ZM = "#C7BBB3"
+  )
+}
+
+supabase_colores_vias <- function() {
+  c(
+    "SISTEMA VIAL PROVINCIAL-METROPOLITANO" = "#9A6B1F",
+    "SISTEMA VIAL PRIMARIO" = "#A23E3A",
+    "SISTEMA VIAL SECUNDARIO" = "#2E6B57",
+    "SISTEMA VIAL ESPECIAL" = "#6B5A88"
+  )
+}
+
+supabase_trazos_vias <- function() {
+  c(
+    "SISTEMA VIAL PROVINCIAL-METROPOLITANO" = "12,6",
+    "SISTEMA VIAL PRIMARIO" = "9,5",
+    "SISTEMA VIAL SECUNDARIO" = "5,5",
+    "SISTEMA VIAL ESPECIAL" = "2,5"
   )
 }
 
@@ -194,9 +212,27 @@ supabase_cargar_datos_espaciales <- function() {
     capas$zonificacion, "COD_S_ZONA", "COLOR_HEX"
   )
   capas$colores_zonas <- supabase_colores_zonas()
-  capas$colores_vias <- supabase_paleta_desde_columnas(
-    capas$vias, "SIS_VIAL", "COLOR_VIA"
-  )
+  capas$colores_vias <- supabase_colores_vias()
+
+  color_zona <- unname(capas$colores_zonas[as.character(capas$zonificacion$COD_ZONA)])
+  color_zona[is.na(color_zona)] <- "#C5CCC8"
+  capas$zonificacion$COLOR_MAPA <- color_zona
+
+  jerarquia_vial <- as.character(capas$vias$SIS_VIAL)
+  color_via <- unname(capas$colores_vias[jerarquia_vial])
+  color_via[is.na(color_via)] <- "#52635B"
+  trazo_via <- unname(supabase_trazos_vias()[jerarquia_vial])
+  trazo_via[is.na(trazo_via)] <- "6,5"
+  peso_via <- unname(c(
+    "SISTEMA VIAL PROVINCIAL-METROPOLITANO" = 2.2,
+    "SISTEMA VIAL PRIMARIO" = 2.0,
+    "SISTEMA VIAL SECUNDARIO" = 1.6,
+    "SISTEMA VIAL ESPECIAL" = 1.7
+  )[jerarquia_vial])
+  peso_via[is.na(peso_via)] <- 1.6
+  capas$vias$COLOR_MAPA <- color_via
+  capas$vias$TRAZO_MAPA <- trazo_via
+  capas$vias$PESO_MAPA <- peso_via
 
   list(
     capas = capas,

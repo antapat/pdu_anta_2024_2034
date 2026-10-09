@@ -555,6 +555,73 @@ body {
   padding: 8px 12px !important;
 }
 
+/* Leyenda cartográfica ejecutiva del sistema vial */
+.leyenda-vial-shell {
+  margin: 0 12px 14px 0 !important;
+}
+
+.leyenda-vial {
+  min-width: 205px;
+  padding: 11px 13px 10px;
+  color: var(--texto-principal);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #CBD8D1;
+  border-top: 3px solid var(--verde-inst);
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(11, 43, 34, 0.16);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.leyenda-vial__titulo {
+  color: var(--verde-oscuro);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.leyenda-vial__subtitulo {
+  margin: 2px 0 8px;
+  color: var(--texto-muted);
+  font-size: 0.67rem;
+}
+
+.leyenda-vial__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+  color: #34463E;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.leyenda-vial__item svg {
+  width: 42px;
+  height: 8px;
+  flex: 0 0 42px;
+  overflow: visible;
+}
+
+@media (max-width: 767.98px) {
+  .leyenda-vial {
+    min-width: 175px;
+    padding: 8px 10px;
+  }
+
+  .leyenda-vial__subtitulo {
+    display: none;
+  }
+
+  .leyenda-vial__item {
+    min-height: 19px;
+    font-size: 0.66rem;
+  }
+}
+
 /* --------------------------------------------------------------------------
    ESTILOS DE LA PESTAÑA BUZÓN CIUDADANO (SUPABASE)
    -------------------------------------------------------------------------- */

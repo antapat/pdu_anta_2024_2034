@@ -131,18 +131,20 @@ generar_mapa_certificado <- function(geom_sf, es_poligono = TRUE, ruta_salida_pn
     
     # 2. Vías Propuestas
     if (nrow(vias_crop) > 0) {
-      pal_vias <- c(
-        "SISTEMA VIAL PROVINCIAL-METROPOLITANO" = "#B88808",
-        "SISTEMA VIAL PRIMARIO"                 = "#D80808",
-        "SISTEMA VIAL SECUNDARIO"               = "#008800",
-        "SISTEMA VIAL ESPECIAL"                 = "#8E44AD"
+      pal_vias <- supabase_colores_vias()
+      tipos_trazo <- c(
+        "SISTEMA VIAL PROVINCIAL-METROPOLITANO" = "longdash",
+        "SISTEMA VIAL PRIMARIO" = "dashed",
+        "SISTEMA VIAL SECUNDARIO" = "dotdash",
+        "SISTEMA VIAL ESPECIAL" = "dotted"
       )
-      p <- p + geom_sf(data = vias_crop, aes(color = SIS_VIAL), linewidth = 1.25, alpha = 0.95) +
+      p <- p + geom_sf(data = vias_crop, aes(color = SIS_VIAL, linetype = SIS_VIAL), linewidth = 0.75, alpha = 0.9) +
         scale_color_manual(
           values = pal_vias,
           name = "Sistema Vial Propuesto (PDU)",
           guide = guide_legend(ncol = 2, byrow = TRUE, title.position = "top")
-        )
+        ) +
+        scale_linetype_manual(values = tipos_trazo, guide = "none")
     }
     
     # 3. Alta Tensión y Ferrocarril
@@ -826,7 +828,19 @@ server <- function(input, output, session) {
   output$mapa_pdu <- renderLeaflet({
     ambito_bbox <- st_bbox(st_transform(capas$ambito, CRS_GEOGRAFICO))
 
+    leyenda_vias_html <- paste0(
+      "<div class='leyenda-vial'>",
+      "<div class='leyenda-vial__titulo'>Sistema vial propuesto</div>",
+      "<div class='leyenda-vial__subtitulo'>Jerarqu&iacute;a de v&iacute;as del PDU</div>",
+      "<div class='leyenda-vial__item'><svg viewBox='0 0 42 8' aria-hidden='true'><line x1='1' y1='4' x2='41' y2='4' stroke='#9A6B1F' stroke-width='2.2' stroke-dasharray='12 6'/></svg><span>Provincial-Metropolitano</span></div>",
+      "<div class='leyenda-vial__item'><svg viewBox='0 0 42 8' aria-hidden='true'><line x1='1' y1='4' x2='41' y2='4' stroke='#A23E3A' stroke-width='2' stroke-dasharray='9 5'/></svg><span>Primario</span></div>",
+      "<div class='leyenda-vial__item'><svg viewBox='0 0 42 8' aria-hidden='true'><line x1='1' y1='4' x2='41' y2='4' stroke='#2E6B57' stroke-width='1.8' stroke-dasharray='5 5'/></svg><span>Secundario</span></div>",
+      "<div class='leyenda-vial__item'><svg viewBox='0 0 42 8' aria-hidden='true'><line x1='1' y1='4' x2='41' y2='4' stroke='#6B5A88' stroke-width='1.8' stroke-dasharray='2 5' stroke-linecap='round'/></svg><span>Especial</span></div>",
+      "</div>"
+    )
+
     leaflet() %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas, group = "Base clara institucional") %>%
       addProviderTiles(providers$OpenStreetMap, group = "OpenStreetMap") %>%
       addProviderTiles(providers$Esri.WorldImagery, group = "Satélite (Esri)") %>%
       addProviderTiles(providers$Esri.WorldTopoMap, group = "Topográfico (Esri)") %>%
@@ -837,9 +851,10 @@ server <- function(input, output, session) {
         data = capas$distritos,
         group = "Límites Distritales",
         fill = FALSE,
-        color = "#7F8C8D",
-        weight = 1.5,
-        dashArray = "4, 4",
+        color = "#66736D",
+        weight = 1.0,
+        opacity = 0.75,
+        dashArray = "5, 5",
         label = ~paste("Distrito:", NOMBDIST)
       ) %>%
       
@@ -848,10 +863,10 @@ server <- function(input, output, session) {
         data = capas$ambito,
         group = "Ámbito PDU Anta",
         fillColor = "#8FAE9B",
-        fillOpacity = 0.10,
-        color = "#1F5137",
-        weight = 3,
-        dashArray = "6, 6",
+        fillOpacity = 0.05,
+        color = "#174A3A",
+        weight = 2.2,
+        dashArray = "10, 6",
         label = ~paste("Ámbito PDU Anta -", NOM_AI)
       ) %>%
       
@@ -859,10 +874,10 @@ server <- function(input, output, session) {
       addPolygons(
         data = capas$alta_tension_buffer,
         group = "Servidumbre Alta Tensión",
-        fillColor = "#F89808",
-        fillOpacity = 0.45,
-        color = "#D80808",
-        weight = 1,
+        fillColor = "#D6A43A",
+        fillOpacity = 0.24,
+        color = "#A23E3A",
+        weight = 0.9,
         label = ~paste("Faja de Servidumbre Eléctrica:", TENS_NOMIN, "kV")
       ) %>%
       
@@ -870,9 +885,10 @@ server <- function(input, output, session) {
       addPolylines(
         data = capas$alta_tension,
         group = "Líneas de Alta Tensión",
-        color = "#D80808",
-        weight = 3,
-        opacity = 0.9,
+        color = "#A23E3A",
+        weight = 1.8,
+        opacity = 0.85,
+        dashArray = "8, 5",
         label = ~paste("Línea AT:", NOM_EMPRES, "-", TENS_NOMIN)
       ) %>%
       
@@ -880,10 +896,10 @@ server <- function(input, output, session) {
       addPolygons(
         data = capas$ferrocarril_buffer,
         group = "Área Referencial Ferroviaria",
-        fillColor = "#8E44AD",
-        fillOpacity = 0.35,
-        color = "#6C3483",
-        weight = 1,
+        fillColor = "#8B7AA8",
+        fillOpacity = 0.20,
+        color = "#6B5A88",
+        weight = 0.9,
         label = ~"Área referencial de análisis ferroviario (15 m por lado; requiere verificación sectorial)"
       ) %>%
       
@@ -891,9 +907,10 @@ server <- function(input, output, session) {
       addPolylines(
         data = capas$ferrocarril,
         group = "Vía Férrea (Tren)",
-        color = "#202020",
-        weight = 3.5,
-        dashArray = "6, 4",
+        color = "#3F4844",
+        weight = 2.1,
+        opacity = 0.88,
+        dashArray = "7, 5",
         label = ~paste("Ferrocarril:", NOM_FERR, "-", TRAMO_FERR)
       ) %>%
       
@@ -901,15 +918,16 @@ server <- function(input, output, session) {
       addPolygons(
         data = capas$zonificacion,
         group = "Zonificación PDU",
-        fillColor = ~COLOR_HEX,
-        fillOpacity = 0.65,
-        color = "#202020",
-        weight = 1,
+        fillColor = ~COLOR_MAPA,
+        fillOpacity = 0.60,
+        color = "#52635B",
+        opacity = 0.72,
+        weight = 0.55,
         label = ~paste0(COD_S_ZONA, " (", COD_ZONA, "): ", SUB_ZONA),
         highlightOptions = highlightOptions(
-          weight = 3,
-          color = "#FFFFFF",
-          fillOpacity = 0.9,
+          weight = 2.2,
+          color = "#F1C75B",
+          fillOpacity = 0.82,
           bringToFront = FALSE
         )
       ) %>%
@@ -918,24 +936,31 @@ server <- function(input, output, session) {
       addPolylines(
         data = capas$vias,
         group = "Sistema Vial Propuesto",
-        color = ~COLOR_VIA,
-        weight = 3.5,
-        opacity = 0.9,
+        color = ~COLOR_MAPA,
+        weight = ~PESO_MAPA,
+        dashArray = ~TRAZO_MAPA,
+        opacity = 0.90,
         label = ~paste0(COD_VIA_PR, " (", SECCION_VI, ") — ", SIS_VIAL),
         popup = ~paste0(
           "<div style='font-size:13px; font-family:Inter, sans-serif;'>",
-          "<div style='background:#006633; color:white; padding:4px 8px; font-weight:bold; border-radius:4px;'>SISTEMA VIAL PROPUESTO</div>",
+          "<div style='background:#174A3A; color:white; padding:5px 9px; font-weight:bold; border-radius:5px;'>SISTEMA VIAL PROPUESTO</div>",
           "<div style='padding:6px 2px;'>",
           "<b>Jerarquía:</b> ", SIS_VIAL, "<br>",
-          "<b>Código de Vía:</b> <span style='color:#006633; font-weight:bold;'>", COD_VIA_PR, "</span><br>",
-          "<b>Sección Vial Normativa (SV):</b> <span style='background:#FFF7D6; color:#B88808; padding:2px 6px; font-weight:bold; border:1px solid #B88808; border-radius:3px;'>", SECCION_VI, "</span>",
+          "<b>Código de Vía:</b> <span style='color:#174A3A; font-weight:bold;'>", COD_VIA_PR, "</span><br>",
+          "<b>Sección Vial Normativa (SV):</b> <span style='background:#FBF7EB; color:#86651F; padding:2px 6px; font-weight:bold; border:1px solid #B68A2C; border-radius:3px;'>", SECCION_VI, "</span>",
           "</div></div>"
         ),
         highlightOptions = highlightOptions(
-          weight = 5,
-          color = "#F8F888",
+          weight = 3.2,
+          color = "#F1C75B",
           bringToFront = TRUE
         )
+      ) %>%
+
+      addControl(
+        html = htmltools::HTML(leyenda_vias_html),
+        position = "bottomright",
+        className = "leyenda-vial-shell"
       ) %>%
       
       addEasyButton(easyButton(
@@ -945,7 +970,7 @@ server <- function(input, output, session) {
       )) %>%
       
       addLayersControl(
-        baseGroups = c("OpenStreetMap", "Satélite (Esri)", "Topográfico (Esri)", "Calles (Esri)"),
+        baseGroups = c("Base clara institucional", "OpenStreetMap", "Satélite (Esri)", "Topográfico (Esri)", "Calles (Esri)"),
         overlayGroups = c(
           "Zonificación PDU", "Sistema Vial Propuesto", "Ámbito PDU Anta", "Límites Distritales",
           "Servidumbre Alta Tensión", "Líneas de Alta Tensión",
