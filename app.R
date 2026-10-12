@@ -271,6 +271,7 @@ generar_mapa_certificado <- function(geom_sf, es_poligono = TRUE, ruta_salida_pn
 # ------------------------------------------------------------------------------
 ui <- page_navbar(
   id = "main_navbar",
+  navbar_options = navbar_options(theme = "light", bg = "#FFFFFF"),
   title = div(
     class = "d-flex align-items-center gap-3",
     div(
@@ -278,22 +279,20 @@ ui <- page_navbar(
       img(src = "escudo_muni_anta.png", class = "logo-muni-header", alt = "Escudo Anta", title = "Municipalidad Provincial de Anta")
     ),
     div(
-      class = "d-flex flex-column",
+      class = "d-flex flex-column justify-content-center",
+      # Fila 1: Marca institucional + Vigencia normativa + Fecha oficial
       div(
-        class = "d-flex align-items-center flex-wrap gap-2",
-        span(class = "fw-bold fs-5", style = "color: #174A3A; letter-spacing: -0.3px;", "GEOVISOR PDU ANTA"),
+        class = "d-flex align-items-center gap-2",
+        span(class = "header-brand-title", "GEOVISOR PDU ANTA"),
         span(class = "pdu-badge-title", "2024 - 2034"),
         span(
-          class = "badge d-none d-sm-inline-flex align-items-center gap-1",
-          style = "background-color: #FDF9EE; color: #78350F; border: 1px solid #C59B27; font-size: 0.72rem; font-weight: 600; padding: 3px 8px; border-radius: 4px;",
+          class = "header-badge-aprobado d-none d-sm-inline-flex",
           icon("calendar-check"), " Aprobado: 04 de abril del 2025"
-        ),
-        uiOutput("ui_status_supabase_pill", inline = TRUE),
-        uiOutput("ui_metricas_publicas", inline = TRUE)
+        )
       ),
+      # Fila 2: Subtítulo territorial institucional
       tags$small(
-        class = "text-muted d-flex align-items-center gap-1",
-        style = "font-size: 0.72rem; font-weight: 500;",
+        class = "header-subtitle d-none d-md-inline-block",
         "Municipalidad Provincial de Anta • Sistema de Información Territorial y Gestión Urbana"
       )
     )
@@ -306,11 +305,14 @@ ui <- page_navbar(
     base_font = font_google("Inter")
   ),
   header = tags$head(
+    tags$meta(name = "viewport", content = "width=device-width, initial-scale=1, shrink-to-fit=no"),
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
     tags$script(HTML("
       function obtenerUbicacionGPS() {
         if (!navigator.geolocation) {
-          alert('La geolocalización no es soportada por este dispositivo.');
+          if (window.Shiny && Shiny.setInputValue) {
+            Shiny.setInputValue('gps_error_event', { code: 0, message: 'La geolocalización no es soportada por este navegador.' }, {priority: 'event'});
+          }
           return;
         }
         var btn = document.getElementById('btn_gps_movil');
@@ -318,39 +320,92 @@ ui <- page_navbar(
           btn.innerHTML = '<i class=\"fa fa-spinner fa-spin\"></i> Obteniendo coordenadas GPS...';
           btn.disabled = true;
         }
-        navigator.geolocation.getCurrentPosition(
-          function(position) {
-            if (btn) {
-              btn.innerHTML = '<i class=\"fa fa-location-crosshairs\"></i> 📍 Mi Ubicación Actual (GPS)';
-              btn.disabled = false;
-            }
+
+        function exitoGPS(position) {
+          if (btn) {
+            btn.innerHTML = '<i class=\"fa fa-location-crosshairs\"></i> 📍 Mi Ubicación Actual (GPS Móvil)';
+            btn.disabled = false;
+          }
+          if (window.Shiny && Shiny.setInputValue) {
             Shiny.setInputValue('gps_location_device', {
               lat: position.coords.latitude,
               lng: position.coords.longitude,
               accuracy: position.coords.accuracy,
               timestamp: new Date().getTime()
             }, {priority: 'event'});
-          },
+          }
+        }
+
+        function falloGPS(error) {
+          if (btn) {
+            btn.innerHTML = '<i class=\"fa fa-location-crosshairs\"></i> 📍 Mi Ubicación Actual (GPS Móvil)';
+            btn.disabled = false;
+          }
+          if (window.Shiny && Shiny.setInputValue) {
+            Shiny.setInputValue('gps_error_event', {
+              code: error.code,
+              message: error.message || ''
+            }, {priority: 'event'});
+          }
+        }
+
+        // Intento 1: Alta precisión (para móviles con GPS dedicado)
+        navigator.geolocation.getCurrentPosition(
+          exitoGPS,
           function(error) {
-            if (btn) {
-              btn.innerHTML = '<i class=\"fa fa-location-crosshairs\"></i> 📍 Mi Ubicación Actual (GPS)';
-              btn.disabled = false;
+            // Si el error fue timeout o posición no disponible, reintentar con red/Wi-Fi estándar
+            if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
+              navigator.geolocation.getCurrentPosition(
+                exitoGPS,
+                falloGPS,
+                { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
+              );
+            } else {
+              falloGPS(error);
             }
-            var msg = 'Error GPS: ';
-            switch(error.code) {
-              case error.PERMISSION_DENIED: msg += 'Permiso denegado por el usuario.'; break;
-              case error.POSITION_UNAVAILABLE: msg += 'Ubicación no disponible.'; break;
-              case error.TIMEOUT: msg += 'Tiempo de espera agotado.'; break;
-              default: msg += error.message; break;
-            }
-            alert(msg);
           },
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
         );
       }
     ")),
     tags$script(HTML("
-      document.addEventListener('shiny:connected', function() {
+      // ======================================================================
+      // GESTIÓN DE CONSENTIMIENTO OPT-IN (Ley N° 29733 y Estándares Int.)
+      // Ningún identificador de analítica se almacena ni se transmite antes de Aceptar.
+      // ======================================================================
+      function inicializarConsentimientoPDU() {
+        var decision = localStorage.getItem('pdu_consent_decision');
+        var banner = document.getElementById('banner_consentimiento_pdu');
+        
+        if (decision === 'accepted') {
+          // Consentimiento previo explícito: generar o recuperar identificador disociado
+          var storageKey = 'pdu_anta_visitante_id';
+          var visitorId = localStorage.getItem(storageKey);
+          if (!visitorId) {
+            visitorId = (window.crypto && window.crypto.randomUUID)
+              ? window.crypto.randomUUID()
+              : 'pdu-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+            localStorage.setItem(storageKey, visitorId);
+          }
+          if (window.Shiny && Shiny.setInputValue) {
+            Shiny.setInputValue('visitante_geovisor_id', visitorId, {priority: 'event'});
+          }
+          if (banner) banner.style.display = 'none';
+        } else if (decision === 'rejected') {
+          // Consentimiento rechazado: eliminar cualquier ID previo y no enviar telemetría
+          localStorage.removeItem('pdu_anta_visitante_id');
+          if (banner) banner.style.display = 'none';
+        } else {
+          // Sin decisión previa: NO se almacena token y se muestra el banner de consentimiento
+          if (banner) {
+            banner.style.display = 'block';
+            setTimeout(function() { banner.classList.add('banner-visible'); }, 50);
+          }
+        }
+      }
+
+      function aceptarConsentimientoPDU() {
+        localStorage.setItem('pdu_consent_decision', 'accepted');
         var storageKey = 'pdu_anta_visitante_id';
         var visitorId = localStorage.getItem(storageKey);
         if (!visitorId) {
@@ -359,11 +414,45 @@ ui <- page_navbar(
             : 'pdu-' + Date.now() + '-' + Math.random().toString(36).slice(2);
           localStorage.setItem(storageKey, visitorId);
         }
-        Shiny.setInputValue('visitante_geovisor_id', visitorId, {priority: 'event'});
+        if (window.Shiny && Shiny.setInputValue) {
+          Shiny.setInputValue('visitante_geovisor_id', visitorId, {priority: 'event'});
+        }
+        var banner = document.getElementById('banner_consentimiento_pdu');
+        if (banner) {
+          banner.classList.remove('banner-visible');
+          setTimeout(function() { banner.style.display = 'none'; }, 250);
+        }
+      }
+
+      function rechazarConsentimientoPDU() {
+        localStorage.setItem('pdu_consent_decision', 'rejected');
+        localStorage.removeItem('pdu_anta_visitante_id');
+        var banner = document.getElementById('banner_consentimiento_pdu');
+        if (banner) {
+          banner.classList.remove('banner-visible');
+          setTimeout(function() { banner.style.display = 'none'; }, 250);
+        }
+      }
+
+      function reabrirModalPrivacidad() {
+        if (window.Shiny && Shiny.setInputValue) {
+          Shiny.setInputValue('abrir_modal_privacidad', new Date().getTime(), {priority: 'event'});
+        }
+      }
+
+      document.addEventListener('shiny:connected', function() {
+        inicializarConsentimientoPDU();
       });
     ")),
     tags$style(HTML("
-      .leaflet-container { height: calc(100vh - 82px) !important; }
+      .leaflet-container { height: calc(100vh - 78px) !important; width: 100% !important; }
+      @media (max-width: 767.98px) {
+        .leaflet-container {
+          height: calc(100dvh - 66px) !important;
+          height: calc(100vh - 66px) !important;
+          width: 100% !important;
+        }
+      }
       .nav-link { font-weight: 600; }
     "))
   ),
@@ -498,9 +587,9 @@ ui <- page_navbar(
     icon = icon("file-invoice"),
     
     div(
-      class = "container-fluid px-lg-5 px-3 py-3",
+      class = "container-fluid px-lg-5 px-2 px-sm-3 py-3",
       div(
-        class = "d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom bg-white p-3 rounded shadow-sm",
+        class = "d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2 mb-3 pb-2 border-bottom bg-white p-2 p-sm-3 rounded shadow-sm",
         actionButton("btn_volver_al_visor", "← Volver al Visor Territorial", class = "btn btn-outline-success fw-bold"),
         uiOutput("ui_boton_descarga_certificado_tab")
       ),
@@ -512,302 +601,253 @@ ui <- page_navbar(
     )
   ),
   
-  # --- PESTAÑA 3: CATÁLOGO DE ZONIFICACIÓN Y LEYENDA ---
-  nav_panel(
-    title = "Catálogo Normativo de Zonas",
-    value = "tab_catalogo",
-    icon = icon("book-bookmark"),
+  # --- PESTAÑA DESPLEGABLE: NORMATIVA E INFORMACIÓN ---
+  nav_menu(
+    title = "Normativa e Información",
+    icon = icon("book-open"),
     
-    div(
-      class = "container py-4",
-      div(
-        class = "card shadow-sm border-0 mb-4 p-4 catalogo-card",
-        
-        div(
-          class = "d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3",
-          div(
-            h3(class = "fw-bold mb-1 catalogo-title", icon("book-open"), " Catálogo de Zonificación y Parámetros Urbanísticos"),
-            p(class = "text-muted mb-0", "Parámetros técnicos y edificatorios aprobados para cada tipología dentro del ámbito del PDU Anta 2024 - 2034.")
-          ),
-          div(
-            class = "d-flex align-items-center gap-2",
-            div(
-              style = "min-width: 260px;",
-              textInput(
-                "txt_buscar_catalogo", NULL,
-                placeholder = "🔍 Buscar zona (ej. R-3, CZ, ZRE)...",
-                width = "100%"
-              )
-            )
-          )
-        ),
-        
-        # Resumen de estadísticas normativas
-        div(
-          class = "row g-3 mb-4",
-          div(
-            class = "col-md-4 col-sm-6",
-            div(
-              class = "p-3 rounded-3 border d-flex align-items-center gap-3 catalogo-kpi",
-              div(class = "p-2 rounded-2 text-white catalogo-kpi-icon catalogo-kpi-icon--green", icon("layer-group", class = "fs-4")),
-              div(
-                tags$small(class = "text-muted text-uppercase fw-bold", "Total Subzonas"),
-                tags$h4(class = "mb-0 fw-bold", as.character(nrow(df_parametros)))
-              )
-            )
-          ),
-          div(
-            class = "col-md-4 col-sm-6",
-            div(
-              class = "p-3 rounded-3 border d-flex align-items-center gap-3 catalogo-kpi",
-              div(class = "p-2 rounded-2 text-white catalogo-kpi-icon catalogo-kpi-icon--gold", icon("gavel", class = "fs-4")),
-              div(
-                tags$small(class = "text-muted text-uppercase fw-bold", "Marco Normativo"),
-                tags$h4(class = "mb-0 fw-bold", "RATDUS / RNE")
-              )
-            )
-          ),
-          div(
-            class = "col-md-4 col-sm-12",
-            div(
-              class = "p-3 rounded-3 border d-flex align-items-center gap-3 catalogo-kpi",
-              div(class = "p-2 rounded-2 text-white catalogo-kpi-icon catalogo-kpi-icon--dark", icon("circle-check", class = "fs-4")),
-              div(
-                tags$small(class = "text-muted text-uppercase fw-bold", "Aprobación Oficial"),
-                tags$h5(class = "mb-0 fw-bold", "04 de abril del 2025")
-              )
-            )
-          )
-        ),
-        
-        hr(class = "my-2"),
-        
-        div(
-          class = "table-responsive mt-3 catalogo-table-wrap",
-          uiOutput("ui_tabla_catalogo_dinamica")
-        )
-      )
-    )
-  ),
-  
-  # El antiguo buzón ciudadano queda deshabilitado: el GeoVisor es un servicio
-  # de consulta informativa y no un canal para recepción de aportes.
-  if (FALSE) nav_panel(
-    title = "Buzón y Observaciones",
-    value = "tab_buzon",
-    icon = icon("envelope-open-text"),
-    
-    div(
-      class = "container py-4",
-      div(
-        class = "row g-4",
-        
-        # Columna Formulario de Reporte
-        div(
-          class = "col-lg-7",
-          div(
-            class = "card-buzon h-100",
-            div(
-              class = "card-buzon-header",
-              div(
-                class = "d-flex justify-content-between align-items-start mb-2",
-                tags$h4(class = "fw-bold mb-0 text-white", icon("comments"), " Buzón de Participación Ciudadana PDU"),
-                span(class = "badge-cloud-tag", icon("database"), " Supabase Cloud DB")
-              ),
-              p(class = "mb-0 small text-light opacity-90",
-                "Registre sus observaciones, dudas sobre zonificación o requerimientos referidos a su predio. La información ingresará de forma segura y directa a la base de datos oficial del proyecto."
-              )
-            ),
-            div(
-              class = "p-4",
-              div(
-                class = "row g-3",
-                div(
-                  class = "col-md-6",
-                  textInput("in_buzon_nombre", "Nombres y Apellidos:", placeholder = "Ej: Juan Pérez Morales")
-                ),
-                div(
-                  class = "col-md-6",
-                  textInput("in_buzon_contacto", "Correo o Teléfono de contacto:", placeholder = "ejemplo@correo.com / 984000000")
-                ),
-                div(
-                  class = "col-md-6",
-                  selectInput(
-                    "in_buzon_tipo", "Materia de la Observación:",
-                    choices = c(
-                      "Consulta sobre Zonificación" = "Zonificación",
-                      "Observación a Vía Propuesta" = "Vía proyectada",
-                      "Afectación por Servidumbre (AT / Tren)" = "Servidumbre",
-                      "Verificación de Límite de Ámbito" = "Ámbito PDU",
-                      "Sugerencia / Otra Consulta" = "Otro"
-                    )
-                  )
-                ),
-                div(
-                  class = "col-md-6",
-                  div(
-                    class = "d-flex justify-content-between align-items-center mb-1",
-                    tags$label(class = "form-label mb-0 small fw-bold", "Ubicación del Predio:"),
-                    actionLink("btn_autollenar_ubicacion_buzon", "📍 Usar punto consultado", class = "small fw-bold text-success")
-                  ),
-                  textInput("in_buzon_ubicacion", NULL, placeholder = "Coordenadas UTM o referencia del predio")
-                ),
-                div(
-                  class = "col-12",
-                  textAreaInput(
-                    "in_buzon_mensaje", "Detalle de su Observación o Consulta:",
-                    rows = 4,
-                    placeholder = "Describa detalladamente su solicitud o requerimiento técnico sobre el predio..."
-                  )
-                ),
-                div(
-                  class = "col-12 mt-3",
-                  actionButton(
-                    "btn_enviar_buzon", "📤 Enviar Observación al Sistema Oficial",
-                    class = "btn btn-success fw-bold w-100 py-2",
-                    icon = icon("paper-plane")
-                  )
-                ),
-                div(
-                  class = "col-12 mt-2",
-                  uiOutput("ui_feedback_buzon")
-                )
-              )
-            )
-          )
-        ),
-        
-        # Columna Información y Avisos de Supabase
-        div(
-          class = "col-lg-5",
-          div(
-            class = "d-flex flex-column gap-3",
-            
-            # Tarjeta de Estado de la Plataforma
-            div(
-              class = "card p-4 border-0 shadow-sm",
-              style = "background: #FFFFFF; border-radius: var(--radius-md); border-left: 4px solid #1B4D3E !important;",
-              h5(class = "fw-bold", style = "color: #1B4D3E;", icon("server"), " Estado del Sistema"),
-              p(class = "small text-muted mb-2",
-                "El GeoVisor se encuentra sincronizado con la infraestructura en la nube de Supabase y Posit Connect Cloud."
-              ),
-              uiOutput("ui_card_estado_supabase")
-            ),
-            
-            # Tarjeta de Avisos Municipales Dinámicos
-            div(
-              class = "card p-4 border-0 shadow-sm",
-              style = "background: #FFFFFF; border-radius: var(--radius-md); border-left: 4px solid #C59B27 !important;",
-              div(
-                class = "d-flex justify-content-between align-items-center mb-2",
-                h5(class = "fw-bold mb-0", style = "color: #78350F;", icon("bullhorn"), " Avisos Oficiales"),
-                span(class = "badge bg-warning text-dark", "PDU Anta")
-              ),
-              p(class = "small text-muted mb-3", "Comunicados emitidos en tiempo real por la Gerencia de Desarrollo Urbano:"),
-              uiOutput("ui_lista_avisos_municipales")
-            )
-          )
-        )
-      )
-    )
-  ),
-  
-  # --- PESTAÑA 5: INFORMACIÓN INSTITUCIONAL DEL PDU ---
-  nav_panel(
-    title = "Información del PDU",
-    value = "tab_informacion",
-    icon = icon("circle-info"),
-    div(
-      class = "container py-4",
-      div(
-        class = "hero-pdu mb-4",
-        div(
-          class = "d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4",
-          div(
-            class = "d-flex align-items-center gap-3",
-            img(src = "escudo_muni_anta.png", style = "height: 75px; width: auto; background: white; padding: 4px; border-radius: 8px;", alt = "Escudo Anta"),
-            div(
-              tags$h3(class = "fw-bold mb-1 text-white", "PLAN DE DESARROLLO URBANO DE ANTA (2024 - 2034)"),
-              tags$h6(class = "mb-0", style = "color: #E2E8F0;", "Municipalidad Provincial de Anta — Gestión Territorial y Desarrollo Urbano Sostenible")
-            )
-          ),
-          img(src = "pdu_actualizado_sf.png", style = "height: 70px; width: auto; background: white; padding: 4px; border-radius: 8px;", alt = "Logo PDU")
-        )
-      ),
+    # 3.1: CATÁLOGO DE ZONIFICACIÓN Y LEYENDA
+    nav_panel(
+      title = "Catálogo Normativo de Zonas",
+      value = "tab_catalogo",
+      icon = icon("book-bookmark"),
       
       div(
-        class = "card shadow-sm border-0 p-4 mb-4",
-        style = "background-color: #FFFFFF; border-radius: var(--radius-md);",
-        
+        class = "container-fluid px-2 px-sm-4 py-3",
         div(
-          class = "card p-3 mb-4",
-          style = "background-color: #FDF9EE; border-left: 5px solid #C59B27;",
-          tags$b(style = "color: #1B4D3E;", "Denominación Oficial del Proyecto:"),
-          tags$p(class = "mb-0", style = "color: #1E293B; font-size: 1.05rem;", paste0("«", PROYECTO_NOMBRE_OFICIAL, "»"))
+          class = "card shadow-sm border-0 mb-4 p-3 p-sm-4 catalogo-card",
+          
+          div(
+            class = "d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3",
+            div(
+              h3(class = "fw-bold mb-1 catalogo-title", icon("book-open"), " Catálogo de Zonificación y Parámetros Urbanísticos"),
+              p(class = "text-muted mb-0", "Parámetros técnicos y edificatorios aprobados para cada tipología dentro del ámbito del PDU Anta 2024 - 2034.")
+            ),
+            div(
+              class = "d-flex align-items-center gap-2",
+              div(
+                style = "min-width: 240px; width: 100%;",
+                textInput(
+                  "txt_buscar_catalogo", NULL,
+                  placeholder = "🔍 Buscar zona (ej. R-3, CZ, ZRE)...",
+                  width = "100%"
+                )
+              )
+            )
+          ),
+          
+          # Resumen de estadísticas normativas
+          div(
+            class = "row g-3 mb-4",
+            div(
+              class = "col-md-4 col-sm-6",
+              div(
+                class = "p-3 rounded-3 border d-flex align-items-center gap-3 catalogo-kpi",
+                div(class = "p-2 rounded-2 text-white catalogo-kpi-icon catalogo-kpi-icon--green", icon("layer-group", class = "fs-4")),
+                div(
+                  tags$small(class = "text-muted text-uppercase fw-bold", "Total Subzonas"),
+                  tags$h4(class = "mb-0 fw-bold", as.character(nrow(df_parametros)))
+                )
+              )
+            ),
+            div(
+              class = "col-md-4 col-sm-6",
+              div(
+                class = "p-3 rounded-3 border d-flex align-items-center gap-3 catalogo-kpi",
+                div(class = "p-2 rounded-2 text-white catalogo-kpi-icon catalogo-kpi-icon--gold", icon("gavel", class = "fs-4")),
+                div(
+                  tags$small(class = "text-muted text-uppercase fw-bold", "Marco Normativo"),
+                  tags$h4(class = "mb-0 fw-bold", "RATDUS / RNE")
+                )
+              )
+            ),
+            div(
+              class = "col-md-4 col-sm-12",
+              div(
+                class = "p-3 rounded-3 border d-flex align-items-center gap-3 catalogo-kpi",
+                div(class = "p-2 rounded-2 text-white catalogo-kpi-icon catalogo-kpi-icon--dark", icon("circle-check", class = "fs-4")),
+                div(
+                  tags$small(class = "text-muted text-uppercase fw-bold", "Aprobación Oficial"),
+                  tags$h5(class = "mb-0 fw-bold", "04 de abril del 2025")
+                )
+              )
+            )
+          ),
+          
+          hr(class = "my-2"),
+          
+          div(
+            class = "table-responsive mt-3 catalogo-table-wrap",
+            uiOutput("ui_tabla_catalogo_dinamica")
+          )
+        )
+      )
+    ),
+    
+    # 3.2: INFORMACIÓN INSTITUCIONAL DEL PDU
+    nav_panel(
+      title = "Información del PDU",
+      value = "tab_informacion",
+      icon = icon("circle-info"),
+      div(
+        class = "container-fluid px-2 px-sm-4 py-3",
+        div(
+          class = "hero-pdu mb-4",
+          div(
+            class = "d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4",
+            div(
+              class = "d-flex align-items-center gap-3",
+              img(src = "escudo_muni_anta.png", style = "height: 65px; width: auto; background: white; padding: 4px; border-radius: 8px;", alt = "Escudo Anta"),
+              div(
+                tags$h3(class = "fw-bold mb-1 text-white", "PLAN DE DESARROLLO URBANO DE ANTA (2024 - 2034)"),
+                tags$h6(class = "mb-0", style = "color: #E2E8F0;", "Municipalidad Provincial de Anta — Gestión Territorial y Desarrollo Urbano Sostenible")
+              )
+            ),
+            img(src = "pdu_actualizado_sf.png", style = "height: 60px; width: auto; background: white; padding: 4px; border-radius: 8px;", alt = "Logo PDU")
+          )
         ),
         
         div(
-          class = "row g-4",
+          class = "card shadow-sm border-0 p-3 p-sm-4 mb-4",
+          style = "background-color: #FFFFFF; border-radius: var(--radius-md);",
+          
           div(
-            class = "col-md-6",
-            div(
-              class = "p-4 bg-light rounded-3 border h-100",
-              h5(class = "fw-bold", style = "color: #1B4D3E;", icon("mountain-sun"), " Ámbito de Intervención"),
-              p("El ámbito del PDU abarca una superficie reglamentada de aproximadamente ", tags$b("9,469.35 hectáreas"), ", integrando sectores de la provincia de Anta incluyendo los distritos de Anta, Pucyura, Cachimayo, Huarocondo y Zurite."),
-              
-              h5(class = "fw-bold mt-4", style = "color: #1B4D3E;", icon("road"), " Sistema Vial Propuesto y Secciones Normativas"),
-              p("El Sistema Vial Propuesto establece la jerarquización de la red vial en ", tags$b("Sistema Vial Provincial-Metropolitano, Primario, Secundario y Especial"), ", determinando para cada eje el código de vía y su Sección Vial Normativa (SV en metros lineales) para asegurar el derecho de vía y la transitabilidad futura.")
-            )
+            class = "card p-3 mb-4",
+            style = "background-color: #FDF9EE; border-left: 5px solid #C59B27;",
+            tags$b(style = "color: #1B4D3E;", "Denominación Oficial del Proyecto:"),
+            tags$p(class = "mb-0", style = "color: #1E293B; font-size: 1.05rem;", paste0("«", PROYECTO_NOMBRE_OFICIAL, "»"))
           ),
+          
           div(
-            class = "col-md-6",
+            class = "row g-4",
             div(
-              class = "p-4 bg-light rounded-3 border h-100",
-              h5(class = "fw-bold", style = "color: #1B4D3E;", icon("bolt"), " Servidumbres Eléctricas y Ferroviarias"),
-              p("Comprende las fajas de servidumbre de líneas de alta tensión (138 kV - L-1007 y 220 kV - L-1002 de 20 m y 25 m de ancho) y la zona de influencia del Ferrocarril Trasandino (D.S. 032-2005-MTC)."),
-              
-              h5(class = "fw-bold mt-4", style = "color: #1B4D3E;", icon("file-lines"), " Base Legal y Reglamentaria"),
-              p("D.S. N° 012-2022-VIVIENDA (Reglamento de Acondicionamiento Territorial y Desarrollo Urbano Sostenible - RATDUS), Reglamento Nacional de Edificaciones (RNE) y Ordenanzas Provinciales de la Municipalidad Provincial de Anta.")
-            )
-          ),
-          div(
-            class = "col-12",
+              class = "col-md-6",
+              div(
+                class = "p-3 p-sm-4 bg-light rounded-3 border h-100",
+                h5(class = "fw-bold", style = "color: #1B4D3E;", icon("mountain-sun"), " Ámbito de Intervención"),
+                p("El ámbito del PDU abarca una superficie reglamentada de aproximadamente ", tags$b("9,469.35 hectáreas"), ", integrando sectores de la provincia de Anta incluyendo los distritos de Anta, Pucyura, Cachimayo, Huarocondo y Zurite."),
+                
+                h5(class = "fw-bold mt-4", style = "color: #1B4D3E;", icon("road"), " Sistema Vial Propuesto y Secciones Normativas"),
+                p("El Sistema Vial Propuesto establece la jerarquización de la red vial en ", tags$b("Sistema Vial Provincial-Metropolitano, Primario, Secundario y Especial"), ", determinando para cada eje el código de vía y su Sección Vial Normativa (SV en metros lineales) para asegurar el derecho de vía y la transitabilidad futura.")
+              )
+            ),
             div(
-              class = "p-4 bg-white rounded-3 border",
-              h5(class = "fw-bold", style = "color: #1B4D3E;", icon("gavel"), " Normativa asociada a la planificación urbana"),
-              p(class = "text-muted", "Marco normativo de referencia del PDU de Anta, resumido a partir de los documentos de la carpeta normativa:"),
-              tags$ul(
-                class = "mb-3",
-                tags$li(
-                  tags$b("Ley N.º 31313 — Ley de Desarrollo Urbano Sostenible: "),
-                  "establece el marco nacional para el acondicionamiento territorial, la planificación urbana y la gestión del suelo, con principios de sostenibilidad, equidad, participación y gestión del riesgo.",
-                  " ", tags$a("Ver texto oficial", href = "https://busquedas.elperuano.pe/dispositivo/NL/1976352-2", target = "_blank", rel = "noopener")
+              class = "col-md-6",
+              div(
+                class = "p-3 p-sm-4 bg-light rounded-3 border h-100",
+                h5(class = "fw-bold", style = "color: #1B4D3E;", icon("bolt"), " Servidumbres Eléctricas y Ferroviarias"),
+                p("Comprende las fajas de servidumbre de líneas de alta tensión (138 kV - L-1007 y 220 kV - L-1002 de 20 m y 25 m de ancho) y la zona de influencia del Ferrocarril Trasandino (D.S. 032-2005-MTC)."),
+                
+                h5(class = "fw-bold mt-4", style = "color: #1B4D3E;", icon("file-lines"), " Base Legal y Reglamentaria"),
+                p("D.S. N° 012-2022-VIVIENDA (Reglamento de Acondicionamiento Territorial y Desarrollo Urbano Sostenible - RATDUS), Reglamento Nacional de Edificaciones (RNE) y Ordenanzas Provinciales de la Municipalidad Provincial de Anta.")
+              )
+            ),
+            div(
+              class = "col-12",
+              div(
+                class = "p-3 p-sm-4 bg-white rounded-3 border",
+                h5(class = "fw-bold", style = "color: #1B4D3E;", icon("gavel"), " Normativa asociada a la planificación urbana"),
+                p(class = "text-muted", "Marco normativo de referencia del PDU de Anta, resumido a partir de los documentos de la carpeta normativa:"),
+                tags$ul(
+                  class = "mb-3",
+                  tags$li(
+                    tags$b("Ley N.º 31313 — Ley de Desarrollo Urbano Sostenible: "),
+                    "establece el marco nacional para el acondicionamiento territorial, la planificación urbana y la gestión del suelo, con principios de sostenibilidad, equidad, participación y gestión del riesgo.",
+                    " ", tags$a("Ver texto oficial", href = "https://busquedas.elperuano.pe/dispositivo/NL/1976352-2", target = "_blank", rel = "noopener")
+                  ),
+                  tags$li(
+                    tags$b("D.S. N.º 012-2022-VIVIENDA — RATDUS: "),
+                    "reglamenta los procesos e instrumentos de planificación, incluido el PDU y sus etapas de formulación, participación, aprobación, implementación y actualización.",
+                    " ", tags$a("Ver norma en el MVCS", href = "https://www.gob.pe/institucion/vivienda/normas-legales/3588833-012-2022-vivienda", target = "_blank", rel = "noopener")
+                  ),
+                  tags$li(
+                    tags$b("D.Leg. N.º 1674: "),
+                    "modifica la Ley N.º 31313 y refuerza la planificación urbana y rural, la gestión del suelo, la participación ciudadana y la gestión del riesgo.",
+                    " ", tags$a("Ver texto oficial", href = "https://busquedas.elperuano.pe/dispositivo/NL/2329855-10", target = "_blank", rel = "noopener")
+                  )
                 ),
-                tags$li(
-                  tags$b("D.S. N.º 012-2022-VIVIENDA — RATDUS: "),
-                  "reglamenta los procesos e instrumentos de planificación, incluido el PDU y sus etapas de formulación, participación, aprobación, implementación y actualización.",
-                  " ", tags$a("Ver norma en el MVCS", href = "https://www.gob.pe/institucion/vivienda/normas-legales/3588833-012-2022-vivienda", target = "_blank", rel = "noopener")
-                ),
-                tags$li(
-                  tags$b("D.Leg. N.º 1674: "),
-                  "modifica la Ley N.º 31313 y refuerza la planificación urbana y rural, la gestión del suelo, la participación ciudadana y la gestión del riesgo.",
-                  " ", tags$a("Ver texto oficial", href = "https://busquedas.elperuano.pe/dispositivo/NL/2329855-10", target = "_blank", rel = "noopener")
-                )
-              ),
-              p(class = "small text-muted mb-0", "El PDU aplica este marco mediante su zonificación, clasificación del suelo, parámetros urbanísticos y sistema vial. Para un trámite o predio concreto, revise también la ordenanza provincial de aprobación y las normas sectoriales pertinentes.")
+                p(class = "small text-muted mb-0", "El PDU aplica este marco mediante su zonificación, clasificación del suelo, parámetros urbanísticos y sistema vial. Para un trámite o predio concreto, revise también la ordenanza provincial de aprobación y las normas sectoriales pertinentes.")
+              )
             )
           )
         )
       )
+    ),
+    
+    # 3.3: POLÍTICA DE PRIVACIDAD Y PROTECCIÓN DE DATOS PERSONALES
+    nav_item(
+      tags$a(
+        href = "#",
+        class = "dropdown-item",
+        onclick = "reabrirModalPrivacidad(); return false;",
+        icon("shield-halved"), " Política de Privacidad y Datos (Ley 29733)"
+      )
     )
   ),
   
-  # Espaciador y Logo Derecho (Proyecto PDU) al extremo del encabezado
+  # Espaciador, métricas de telemetría y Logo Oficial PDU al extremo derecho
   nav_spacer(),
   nav_item(
     div(
-      class = "brand-logo-right me-2 d-none d-md-flex",
-      img(src = "pdu_actualizado_sf.png", class = "logo-pdu-header", alt = "Logo PDU", title = "Plan de Desarrollo Urbano de Anta 2024 - 2034")
+      class = "d-flex align-items-center gap-2 me-1",
+      uiOutput("ui_metricas_publicas", inline = TRUE),
+      div(
+        class = "brand-logo-right d-none d-xl-flex",
+        img(src = "pdu_actualizado_sf.png", class = "logo-pdu-header", alt = "Logo PDU", title = "Plan de Desarrollo Urbano de Anta 2024 - 2034")
+      )
+    )
+  ),
+  
+  # Banner flotante de consentimiento Opt-In (Ley N° 29733 / Estándares Internacionales)
+  footer = div(
+    id = "banner_consentimiento_pdu",
+    class = "banner-consent-shell",
+    style = "display: none;",
+    div(
+      class = "banner-consent-card container-fluid",
+      div(
+        class = "row align-items-center g-3",
+        div(
+          class = "col-lg-8 col-md-7 col-12",
+          div(
+            class = "d-flex align-items-start gap-3",
+            div(class = "consent-icon-box text-success fs-3", icon("shield-halved")),
+            div(
+              tags$h6(class = "fw-bold mb-1 consent-title", "Aviso de Privacidad y Consentimiento de Telemetría (Ley N° 29733)"),
+              tags$p(
+                class = "mb-1 text-muted small consent-desc",
+                "Este Geovisor institucional utiliza almacenamiento técnico y métricas anonimizadas (hash SHA-256 disociado, sin dirección IP ni rastreo comercial) con el fin exclusivo de cuantificar visitas públicas. Las consultas de predios no se guardan y la función GPS solo se activa si pulsa voluntariamente el botón de ubicación en su navegador."
+              ),
+              tags$a(
+                href = "#",
+                onclick = "reabrirModalPrivacidad(); return false;",
+                class = "consent-link-info small",
+                icon("circle-info"), " Ver Política de Privacidad y Tratamiento de Información"
+              )
+            )
+          )
+        ),
+        div(
+          class = "col-lg-4 col-md-5 col-12 text-md-end text-center",
+          div(
+            class = "consent-buttons-wrap d-flex justify-content-md-end justify-content-center gap-2",
+            tags$button(
+              id = "btn_consent_rechazar",
+              type = "button",
+              class = "btn-consent-action btn-consent-reject",
+              onclick = "rechazarConsentimientoPDU()",
+              icon("xmark"), " Rechazar"
+            ),
+            tags$button(
+              id = "btn_consent_aceptar",
+              type = "button",
+              class = "btn-consent-action btn-consent-accept",
+              onclick = "aceptarConsentimientoPDU()",
+              icon("check"), " Aceptar"
+            )
+          )
+        )
+      )
     )
   )
 )
@@ -826,6 +866,7 @@ server <- function(input, output, session) {
   # 2.1 RENDERIZADO BASE DEL MAPA LEAFLET
   # ----------------------------------------------------------------------------
   output$mapa_pdu <- renderLeaflet({
+    zonif_bbox <- st_bbox(st_transform(capas$zonificacion, CRS_GEOGRAFICO))
     ambito_bbox <- st_bbox(st_transform(capas$ambito, CRS_GEOGRAFICO))
 
     leyenda_vias_html <- paste0(
@@ -966,7 +1007,16 @@ server <- function(input, output, session) {
       addEasyButton(easyButton(
         icon = "fa-crosshairs", title = "Mi Ubicación Actual (GPS)",
         position = "topleft",
-        onClick = JS("function(btn, map){ map.locate({setView: true, maxZoom: 17, enableHighAccuracy: true}); }")
+        onClick = JS("function(btn, map){ obtenerUbicacionGPS(); }")
+      )) %>%
+      addEasyButton(easyButton(
+        icon = "fa-expand", title = "Ajustar vista a Zonificación PDU",
+        position = "topleft",
+        onClick = JS(sprintf(
+          "function(btn, map){ map.fitBounds([[%f, %f], [%f, %f]]); }",
+          unname(zonif_bbox["ymin"]), unname(zonif_bbox["xmin"]),
+          unname(zonif_bbox["ymax"]), unname(zonif_bbox["xmax"])
+        ))
       )) %>%
       
       addLayersControl(
@@ -980,10 +1030,10 @@ server <- function(input, output, session) {
       ) %>%
       
       fitBounds(
-        lng1 = unname(ambito_bbox["xmin"]),
-        lat1 = unname(ambito_bbox["ymin"]),
-        lng2 = unname(ambito_bbox["xmax"]),
-        lat2 = unname(ambito_bbox["ymax"])
+        lng1 = unname(zonif_bbox["xmin"]),
+        lat1 = unname(zonif_bbox["ymin"]),
+        lng2 = unname(zonif_bbox["xmax"]),
+        lat2 = unname(zonif_bbox["ymax"])
       )
   })
   
@@ -1061,6 +1111,40 @@ server <- function(input, output, session) {
     showNotification(
       paste0("Ubicación GPS fijada (Precisión: ±", round(loc$accuracy, 1), " m)"),
       type = "message", duration = 4
+    )
+  })
+  
+  # Manejo institucional de avisos y errores de GPS (RStudio Viewer / Navegador)
+  observeEvent(input$gps_error_event, {
+    err <- input$gps_error_event
+    req(err)
+    
+    codigo <- suppressWarnings(as.integer(err$code))
+    mensaje_html <- if (isTRUE(codigo == 1)) { # PERMISSION_DENIED
+      HTML(paste0(
+        "<div style='font-size: 13.5px;'>",
+        "<b><i class='fa fa-location-dot'></i> Permiso de ubicación GPS no concedido</b><br>",
+        "El navegador o entorno de ejecución no permitió acceder a las coordenadas del dispositivo.<br>",
+        "<ul style='margin: 6px 0 0 16px; padding: 0;'>",
+        "<li><b>Si está en el visor interno de RStudio:</b> Haga clic en el botón <b>«Open in Browser»</b> (arriba a la izquierda) para abrir la aplicación en Chrome, Edge o Firefox.</li>",
+        "<li><b>Si está en un navegador web o teléfono móvil:</b> Verifique que los permisos de ubicación estén habilitados para este sitio en la barra de direcciones.</li>",
+        "<li>También puede ingresar coordenadas UTM o seleccionar su predio directamente en el mapa.</li>",
+        "</ul>",
+        "</div>"
+      ))
+    } else if (isTRUE(codigo == 2)) { # POSITION_UNAVAILABLE
+      HTML("<b>Ubicación no disponible:</b> No se pudo determinar la posición geográfica del dispositivo. Puede ingresar coordenadas UTM manualmente en el panel.")
+    } else if (isTRUE(codigo == 3)) { # TIMEOUT
+      HTML("<b>Tiempo de espera agotado:</b> La señal GPS tardó demasiado en responder. Intente nuevamente o ingrese coordenadas UTM manualmente.")
+    } else {
+      HTML("<b>Aviso de ubicación:</b> Su dispositivo o navegador no tiene soporte de geolocalización activo en este momento.")
+    }
+    
+    showNotification(
+      mensaje_html,
+      type = "warning",
+      duration = 10,
+      closeButton = TRUE
     )
   })
   
@@ -1704,8 +1788,8 @@ server <- function(input, output, session) {
     # Estilo CSS optimizado para uso del 100% del ancho en pantalla y formato A4 en 2 páginas completas
     css_certificado <- "
       @page { size: A4 portrait; margin: 8mm 10mm 8mm 10mm; }
-      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ffffff; color: #202020; margin: 0; padding: 2px; font-size: 13px; line-height: 1.35; width: 100%; }
-      .cert-card { width: 100%; max-width: 1200px; margin: 0 auto; }
+      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ffffff; color: #202020; margin: 0; padding: 2px; font-size: 13px; line-height: 1.35; width: 100%; box-sizing: border-box; }
+      .cert-card { width: 100%; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
       .header-banner { background: linear-gradient(135deg, #006633, #008800); color: white; padding: 8px 16px; border-radius: 4px; margin-bottom: 6px; border-bottom: 3px solid #B88808; width: 100%; box-sizing: border-box; }
       .header-title { font-size: 1.15rem; font-weight: 700; color: #FFFFFF; margin: 0; line-height: 1.2; }
       .header-subtitle { font-size: 0.86rem; color: #F8F888; margin: 0; }
@@ -1730,6 +1814,20 @@ server <- function(input, output, session) {
       .small { font-size: 0.78rem; } .badge { display:inline-block; padding:2px 6px; border-radius:3px; color:#fff; }
       .bg-success { background:#008800; } .me-2 { margin-right:6px; } .ms-2 { margin-left:6px; }
       .mb-0 { margin-bottom:0; } .mb-1 { margin-bottom:3px; } .mb-2 { margin-bottom:6px; }
+      @media (max-width: 768px) {
+        body { font-size: 12px; padding: 0; }
+        .cert-card { width: 100% !important; max-width: 100% !important; margin: 0; padding: 0; }
+        .header-banner { padding: 6px 8px; }
+        .header-title { font-size: 0.88rem; }
+        .header-subtitle { font-size: 0.74rem; }
+        .header-meta { font-size: 0.65rem; }
+        .table-cert { font-size: 0.76rem; }
+        .table-cert th, .table-cert td { padding: 3px 5px; }
+        .table-compact th { width: 34%; }
+        .project-box { font-size: 0.72rem; padding: 4px 8px; }
+        .mapa-img-fullpage { max-height: 400px; }
+        .section-heading { font-size: 0.80rem; }
+      }
     "
     
     if (modo == "punto") {
@@ -1781,6 +1879,7 @@ server <- function(input, output, session) {
       doc_html <- tags$html(
         tags$head(
           tags$meta(charset = "utf-8"),
+          tags$meta(name = "viewport", content = "width=device-width, initial-scale=1, shrink-to-fit=no"),
           tags$title("Reporte Informativo de Parámetros Urbanísticos - PDU Anta"),
           tags$style(HTML(css_certificado))
         ),
@@ -1895,6 +1994,7 @@ server <- function(input, output, session) {
       doc_html <- tags$html(
         tags$head(
           tags$meta(charset = "utf-8"),
+          tags$meta(name = "viewport", content = "width=device-width, initial-scale=1, shrink-to-fit=no"),
           tags$title("Reporte Informativo de Zonificación de Predio - PDU Anta"),
           tags$style(HTML(css_certificado))
         ),
@@ -2302,20 +2402,95 @@ server <- function(input, output, session) {
     }
   }, once = TRUE, ignoreInit = FALSE)
 
+  # Modal Informativo y Panel de Configuración de Privacidad (Ley N° 29733)
+  observeEvent(input$abrir_modal_privacidad, {
+    showModal(modalDialog(
+      title = div(
+        class = "d-flex align-items-center gap-2 text-dark",
+        icon("shield-halved", class = "text-success fs-4"),
+        tags$span(class = "fw-bold fs-5", "Política de Privacidad y Tratamiento de Información")
+      ),
+      size = "l",
+      easyClose = TRUE,
+      fade = TRUE,
+      footer = tagList(
+        div(
+          class = "d-flex justify-content-between align-items-center w-100 flex-wrap gap-2",
+          div(
+            class = "d-flex gap-2",
+            tags$button(
+              type = "button",
+              class = "btn-consent-action btn-consent-reject",
+              onclick = "rechazarConsentimientoPDU(); $('#shiny-modal').modal('hide');",
+              icon("xmark"), " Rechazar analítica"
+            ),
+            tags$button(
+              type = "button",
+              class = "btn-consent-action btn-consent-accept",
+              onclick = "aceptarConsentimientoPDU(); $('#shiny-modal').modal('hide');",
+              icon("check"), " Aceptar analítica"
+            )
+          ),
+          modalButton("Cerrar")
+        )
+      ),
+      
+      div(
+        class = "privacy-modal-body p-2",
+        div(
+          class = "alert alert-success border-0 py-2 px-3 mb-3 d-flex align-items-center gap-2",
+          icon("certificate"),
+          tags$span(class = "small", tags$b("Marco Normativo: "), "Ley N° 29733 (Ley de Protección de Datos Personales del Perú), D.S. 003-2013-JUS y Estándares Internacionales ePrivacy / RGPD.")
+        ),
+        
+        tags$h6(class = "fw-bold text-success mb-1", icon("landmark"), " 1. Entidad Responsable"),
+        tags$p(class = "small text-secondary mb-3",
+          "Municipalidad Provincial de Anta — Gerencia de Desarrollo Urbano y Rural (GDUR). ",
+          "Dirección: Plaza de Armas de Anta, Cusco. Correo institucional de contacto: mesadepartes@munianta.gob.pe."
+        ),
+        
+        tags$h6(class = "fw-bold text-success mb-1", icon("database"), " 2. Finalidad del Tratamiento de Información"),
+        tags$p(class = "small text-secondary mb-3",
+          "La plataforma tiene fines estrictamente públicos, informativos y de transparencia en el marco de la vigencia del Plan de Desarrollo Urbano de Anta (2024 - 2034). ",
+          "La información cartográfica, zonificación y secciones viales se ponen a disposición de la ciudadanía en ejercicio de las funciones normadas por la Ley Orgánica de Municipalidades (Ley N° 27972) y el D.S. N° 012-2022-VIVIENDA (RATDUS)."
+        ),
+        
+        tags$h6(class = "fw-bold text-success mb-1", icon("user-shield"), " 3. Principio de Minimización y Anonimización Técnica"),
+        tags$ul(class = "small text-secondary mb-3",
+          tags$li(tags$b("Sin Dirección IP: "), "El servidor y la base de datos Supabase/PostGIS NO almacenan direcciones IP ni identificadores de red de los visitantes."),
+          tags$li(tags$b("Sin Cookies Comerciales ni Terceros: "), "No se emplean cookies de seguimiento comercial, publicitario o de redes sociales (sin Google Analytics, Meta Pixel ni rastreadores externos)."),
+          tags$li(tags$b("Telemetría con Hash Criptográfico: "), "Si el usuario acepta la analítica, se genera un identificador aleatorio de sesión disociado, el cual es transformado mediante una función resumen unidireccional SHA-256 en la base de datos con el único propósito de cuantificar visitas agregadas por día."),
+          tags$li(tags$b("Consultas de Predios Seguras: "), "Los puntos geográficos o polígonos consultados por los ciudadanos se procesan en memoria volátil de sesión R y se descartan al cerrar la consulta; no se almacenan en ninguna base de datos.")
+        ),
+        
+        tags$h6(class = "fw-bold text-success mb-1", icon("location-dot"), " 4. Función de Geolocalización (GPS Móvil)"),
+        tags$p(class = "small text-secondary mb-3",
+          "La geolocalización es estrictamente voluntaria y bajo demanda (Opt-In). La función solo se activa cuando el ciudadano presiona manualmente el botón de GPS en la interfaz, requiriendo la autorización nativa del navegador. Las coordenadas recibidas se usan únicamente para situar el marcador temporal en el mapa y nunca son registradas."
+        ),
+        
+        tags$h6(class = "fw-bold text-success mb-1", icon("sliders"), " 5. Control y Revocación del Consentimiento"),
+        tags$p(class = "small text-secondary mb-0",
+          "Usted tiene el control total sobre su preferencia. Puede aceptar o rechazar la telemetría en cualquier momento usando los botones ubicados en la parte inferior de esta ventana. Si decide rechazarla, el Geovisor continuará funcionando con el 100% de sus capacidades técnicas sin limitación alguna."
+        )
+      )
+    ))
+  })
+
   output$ui_metricas_publicas <- renderUI({
     metricas <- metricas_supa()
     if (is.null(metricas) || is.na(metricas$visitas_total)) return(NULL)
 
-    tagList(
+    div(
+      class = "header-counters-wrap d-none d-md-inline-flex",
       span(
-        class = "badge bg-light text-dark border d-none d-lg-inline-flex align-items-center gap-1",
-        title = "Visitas únicas aproximadas por navegador y día",
-        icon("eye"), format(metricas$visitas_total, big.mark = ",", scientific = FALSE), " visitas"
+        class = "counter-chip-mini",
+        title = "Visitas registradas a la plataforma",
+        icon("eye"), tags$span(class = "counter-chip-val", format(metricas$visitas_total, big.mark = ",", scientific = FALSE)), " visitas"
       ),
       span(
-        class = "badge bg-light text-dark border d-none d-lg-inline-flex align-items-center gap-1",
-        title = "Constancias informativas generadas",
-        icon("file-pdf"), format(metricas$constancias_total, big.mark = ",", scientific = FALSE), " constancias"
+        class = "counter-chip-mini",
+        title = "Constancias técnicas generadas",
+        icon("file-lines"), tags$span(class = "counter-chip-val", format(metricas$constancias_total, big.mark = ",", scientific = FALSE)), " constancias"
       )
     )
   })
