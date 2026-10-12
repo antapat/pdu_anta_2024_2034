@@ -174,8 +174,16 @@ Conforme a los requerimientos de usabilidad técnica, se optimizó el lanzamient
   ```
 - **Resultado:** El ciudadano aterriza visualmente directo en el tejido urbano reglamentado, visualizando de inmediato manzanas, códigos de subzona y colores oficiales.
 
-### 4.2 Botón de Restablecimiento Rápido de Encuadre
-Se incorporó un control `EasyButton` en el cuadrante superior izquierdo con el ícono `fa-expand` (*"Ajustar vista a Zonificación PDU"*), permitiendo al usuario volver instantáneamente al encuadre urbano principal tras realizar navegaciones profundas o búsquedas remotas.
+### 4.2 Optimización de Enfoque en Dispositivos Móviles (Smartphones)
+- **Problema en móviles:** En pantallas de smartphones, el cálculo del viewport (`100dvh` / barra de navegación dinámica) y el colapso del sidebar en CSS Grid provocan un desfase de milisegundos en Leaflet. Al inicializarse el mapa con dimensiones aún no consolidadas por el navegador móvil, `fitBounds` se ejecutaba contra un contenedor de tamaño cero o inestable, quedando el mapa en escala lejana o fuera de foco.
+- **Solución implementada:**
+  1. **`htmlwidgets::onRender` Progresivo:** Invocación escalonada (a 150ms, 600ms y 1400ms) de `map.invalidateSize()` y `map.fitBounds(zonifBounds)` en el cliente una vez estabilizado el layout móvil.
+  2. **Eventos Reactivos de Pantalla:** Enlace a `resize`, `orientationchange` y `shown.bs.tab` para recentrar automáticamente si el usuario rota el teléfono o cambia de pestaña.
+  3. **Refuerzo en Servidor:** Observer `session$onFlushed` con `leafletProxy("mapa_pdu")` para forzar el encuadre una vez conectado el WebSocket del cliente.
+  4. **CSS Contenedor Móvil:** Asignación explícita de `min-height: 480px` y `height: calc(100dvh - 66px)` en `#mapa_pdu` para garantizar dimensiones inmediatas.
+
+### 4.3 Botón de Restablecimiento Rápido de Encuadre
+Se incorporó un control `EasyButton` en el cuadrante superior izquierdo con el ícono `fa-expand` (*"Ajustar vista a Zonificación PDU"*), permitiendo al usuario volver instantáneamente al encuadre urbano principal tras realizar navegaciones profundas o búsquedas remotas (incluyendo `map.invalidateSize()` previo).
 
 ---
 

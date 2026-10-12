@@ -18,6 +18,7 @@ suppressPackageStartupMessages({
   library(sf)
   library(dplyr)
   library(htmltools)
+  library(htmlwidgets)
   library(ggplot2)
   library(knitr)
 })
@@ -1013,7 +1014,7 @@ server <- function(input, output, session) {
         icon = "fa-expand", title = "Ajustar vista a Zonificación PDU",
         position = "topleft",
         onClick = JS(sprintf(
-          "function(btn, map){ map.fitBounds([[%f, %f], [%f, %f]]); }",
+          "function(btn, map){ map.invalidateSize(); map.fitBounds([[%f, %f], [%f, %f]], {padding: [12, 12], maxZoom: 16}); }",
           unname(zonif_bbox["ymin"]), unname(zonif_bbox["xmin"]),
           unname(zonif_bbox["ymax"]), unname(zonif_bbox["xmax"])
         ))
@@ -1034,8 +1035,63 @@ server <- function(input, output, session) {
         lat1 = unname(zonif_bbox["ymin"]),
         lng2 = unname(zonif_bbox["xmax"]),
         lat2 = unname(zonif_bbox["ymax"])
-      )
+      ) %>%
+      
+      htmlwidgets::onRender(sprintf("
+        function(el, x) {
+          var map = this;
+          var zonifBounds = [[%f, %f], [%f, %f]];
+          
+          function enfocarZonificacionMobile() {
+            if (!map) return;
+            map.invalidateSize();
+            map.fitBounds(zonifBounds, {
+              padding: [15, 15],
+              maxZoom: 16,
+              animate: false
+            });
+          }
+          
+          // Re-intentos escalonados conforme el viewport móvil calcula el 100dvh y el layout se estabiliza
+          setTimeout(enfocarZonificacionMobile, 150);
+          setTimeout(enfocarZonificacionMobile, 600);
+          setTimeout(enfocarZonificacionMobile, 1400);
+          
+          // Soporte ante giros de pantalla (portrait/landscape) y redimensionamiento
+          window.addEventListener('resize', function() {
+            map.invalidateSize();
+          });
+          window.addEventListener('orientationchange', function() {
+            setTimeout(enfocarZonificacionMobile, 350);
+          });
+          
+          // Re-ajustar al cambiar de pestaña en Bootstrap
+          document.addEventListener('shown.bs.tab', function() {
+            setTimeout(enfocarZonificacionMobile, 200);
+          });
+          
+          // Re-ajustar si el usuario colapsa o despliega el sidebar de bslib
+          document.addEventListener('bslib.sidebar.toggle', function() {
+            setTimeout(enfocarZonificacionMobile, 350);
+          });
+        }
+      ",
+      unname(zonif_bbox["ymin"]), unname(zonif_bbox["xmin"]),
+      unname(zonif_bbox["ymax"]), unname(zonif_bbox["xmax"])
+      ))
   })
+  
+  # Refuerzo reactivo: Asegurar encuadre a zonificación en cuanto el cliente móvil completa la conexión
+  session$onFlushed(function() {
+    zonif_bb <- st_bbox(st_transform(capas$zonificacion, CRS_GEOGRAFICO))
+    leafletProxy("mapa_pdu") %>%
+      fitBounds(
+        lng1 = unname(zonif_bb["xmin"]),
+        lat1 = unname(zonif_bb["ymin"]),
+        lng2 = unname(zonif_bb["xmax"]),
+        lat2 = unname(zonif_bb["ymax"])
+      )
+  }, once = TRUE)
   
   # ----------------------------------------------------------------------------
   # 2.2 CONSULTAS PUNTUALES Y EVENTO GPS
@@ -1064,15 +1120,29 @@ server <- function(input, output, session) {
     updateNumericInput(session, "in_este", value = round(coords_utm[1], 1))
     updateNumericInput(session, "in_norte", value = round(coords_utm[2], 1))
 
-    leafletProxy("mapa_pdu") %>%
-      clearGroup("consulta_activa") %>%
+    proxy_map <- leafletProxy("mapa_pdu") %>%
+      clearGroup("consulta_activa")
+      
+    # Círculo de radio de precisión estimada (GPS / Wi-Fi)
+    if (!is.null(precision) && is.numeric(precision) && precision > 5) {
+      proxy_map <- proxy_map %>%
+        addCircles(
+          lng = lng, lat = lat, group = "consulta_activa",
+          radius = precision,
+          color = "#2563EB", weight = 1.5, dashArray = "4,4",
+          fillColor = "#3B82F6", fillOpacity = 0.12,
+          popup = paste0("<b>Incertidumbre de posición:</b> ±", precision, " metros")
+        )
+    }
+
+    proxy_map %>%
       addCircleMarkers(
         lng = lng, lat = lat, group = "consulta_activa",
         radius = 7, color = "#202020", weight = 2,
         fillColor = "#D80808", fillOpacity = 0.9,
-        label = "Punto consultado"
+        label = paste0("Punto consultado", if (!is.null(precision)) paste0(" (Precisión: ±", precision, " m)") else "")
       ) %>%
-      setView(lng = lng, lat = lat, zoom = 17)
+      setView(lng = lng, lat = lat, zoom = if (!is.null(precision) && precision > 150) 15 else 17)
       
     # Registro de auditoría territorial en Supabase
     tryCatch({
@@ -1105,13 +1175,26 @@ server <- function(input, output, session) {
   observeEvent(input$gps_location_device, {
     loc <- input$gps_location_device
     req(loc$lat, loc$lng)
-    tryCatch(fijar_punto_consulta(loc$lng, loc$lat, precision = round(loc$accuracy, 1)), error = function(e) {
+    acc <- round(loc$accuracy, 1)
+    tryCatch(fijar_punto_consulta(loc$lng, loc$lat, precision = acc), error = function(e) {
       showNotification(conditionMessage(e), type = "error")
     })
-    showNotification(
-      paste0("Ubicación GPS fijada (Precisión: ±", round(loc$accuracy, 1), " m)"),
-      type = "message", duration = 4
-    )
+    
+    if (acc > 30) {
+      showNotification(
+        HTML(paste0(
+          "<b><i class='fa fa-wifi'></i> Posición estimada por Red/Wi-Fi (±", acc, " m):</b><br>",
+          "En computadoras o laptops la posición es aproximada mediante antenas Wi-Fi.<br>",
+          "<small style='color: #4A5568;'>Para máxima precisión catastral (±3 a 5 m), abra el geovisor en un teléfono móvil con GPS activo en campo o ingrese coordenadas UTM del plano.</small>"
+        )),
+        type = "warning", duration = 8
+      )
+    } else {
+      showNotification(
+        paste0("✓ Ubicación GPS de alta precisión fijada (±", acc, " m)."),
+        type = "message", duration = 4
+      )
+    }
   })
   
   # Manejo institucional de avisos y errores de GPS (RStudio Viewer / Navegador)
