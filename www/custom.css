@@ -1,0 +1,1497 @@
+/* ==========================================================================
+   ESTILOS INSTITUCIONALES MODERNOS - GEOVISOR PDU ANTA (2024 - 2034)
+   Paleta Institucional: Verde Bosque Andino, Dorado Solar y Neutros Pizarra
+   Compatible con Posit Connect Cloud, Navegación Móvil y Pantallas Retina
+   ========================================================================== */
+
+:root {
+  /* Colores primarios */
+  --verde-inst: #174A3A;
+  --verde-hover: #10392D;
+  --verde-oscuro: #0B2B22;
+  --verde-claro: #EEF5F1;
+  --verde-borde: #C9DBD2;
+  
+  /* Dorado y Acentos */
+  --dorado-inst: #B68A2C;
+  --dorado-oscuro: #86651F;
+  --dorado-fondo: #FBF7EB;
+  --dorado-borde: #E5D39F;
+  
+  /* Estados */
+  --rojo-alerta: #D32F2F;
+  --rojo-fondo: #FDE8E8;
+  --ambar-aviso: #D97706;
+  --ambar-fondo: #FEF3C7;
+  --azul-info: #1D4ED8;
+  --azul-fondo: #EFF6FF;
+  
+  /* Tipografía y Neutros */
+  --texto-principal: #17251F;
+  --texto-secundario: #41534B;
+  --texto-muted: #687870;
+  --bg-app: #F4F7F5;
+  --bg-card: #FFFFFF;
+  --border-card: #E2E8F0;
+  
+  /* Sombras Modernas */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 45, 36, 0.08), 0 4px 6px -4px rgba(15, 45, 36, 0.04);
+  --shadow-card: 0 4px 20px -2px rgba(27, 77, 62, 0.06);
+  
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--texto-principal);
+  background-color: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  color: #FFFFFF;
+  background: var(--verde-inst);
+}
+
+/* --------------------------------------------------------------------------
+   NAVBAR SUPERIOR INSTITUCIONAL CON EFECTO GLASS
+   -------------------------------------------------------------------------- */
+.navbar,
+nav.navbar,
+nav.navbar-default,
+nav.navbar-static-top {
+  --bs-navbar-color: #174A3A !important;
+  --bs-navbar-hover-color: #0E3529 !important;
+  --bs-navbar-active-color: #FFFFFF !important;
+  --bs-navbar-brand-color: #174A3A !important;
+  --bs-navbar-brand-hover-color: #0E3529 !important;
+  --bs-nav-link-color: #174A3A !important;
+  --bs-nav-link-hover-color: #0E3529 !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 2px solid var(--verde-borde) !important;
+  box-shadow: 0 4px 20px rgba(15, 45, 36, 0.06) !important;
+  padding: 0.4rem 1rem !important;
+  z-index: 1050;
+}
+
+.navbar > .container-fluid {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+.navbar-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+.navbar-brand {
+  padding: 0 !important;
+  margin: 0 !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  color: var(--verde-inst) !important;
+}
+
+.brand-logo-left {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
+}
+
+.brand-logo-right {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
+}
+
+.logo-muni-header {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+}
+
+.logo-pdu-header {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+.pdu-badge-title {
+  background: linear-gradient(135deg, var(--verde-inst), var(--verde-oscuro)) !important;
+  color: #FFFFFF !important;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: 1px solid var(--dorado-inst);
+  box-shadow: 0 2px 6px rgba(27, 77, 62, 0.25);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Tipografía y Elementos del Encabezado */
+.header-brand-title {
+  color: var(--verde-inst) !important;
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.header-badge-aprobado {
+  background-color: #FDF9EE !important;
+  color: #78350F !important;
+  border: 1px solid #D4A329 !important;
+  font-size: 0.70rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.header-badge-aprobado .fa,
+.header-badge-aprobado svg {
+  color: #92400E !important;
+}
+
+.header-subtitle {
+  color: #3F564C !important;
+  font-size: 0.71rem;
+  font-weight: 500;
+  letter-spacing: -0.1px;
+  line-height: 1.2;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Micro-contadores Públicos en Encabezado (Telemetría Discreta de Alta Claridad) */
+.header-counters-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.counter-chip-mini {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  color: #1E382B !important;
+  background-color: #EDF4F0 !important;
+  border: 1px solid #C2D8CB !important;
+  border-radius: 14px !important;
+  padding: 2px 8px !important;
+  line-height: 1.35 !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 2px rgba(15, 45, 36, 0.04) !important;
+}
+
+.counter-chip-mini:hover {
+  background-color: #E2EDE7 !important;
+  border-color: #A3C7B3 !important;
+  color: #0E2E23 !important;
+}
+
+.counter-chip-mini .counter-chip-val {
+  font-weight: 700 !important;
+  color: var(--verde-inst) !important;
+}
+
+.counter-chip-mini .fa,
+.counter-chip-mini .fas,
+.counter-chip-mini svg {
+  font-size: 0.70rem !important;
+  color: var(--verde-inst) !important;
+  opacity: 0.9 !important;
+}
+
+/* Enlaces de Navegación y Pestañas del Navbar */
+.navbar .navbar-nav > li > a,
+.navbar .navbar-nav .nav-link,
+.navbar .navbar-nav .dropdown-toggle,
+:where(ul.nav.navbar-nav > li) > a,
+.navbar-nav > li > a {
+  color: #174A3A !important;
+  background-color: #F1F6F3 !important;
+  border: 1px solid #CFE0D7 !important;
+  font-weight: 600 !important;
+  font-size: 0.88rem !important;
+  padding: 0.42rem 0.85rem !important;
+  margin: 0 3px !important;
+  border-radius: var(--radius-sm) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  text-decoration: none !important;
+  transition: all 0.18s ease-in-out !important;
+  white-space: nowrap !important;
+}
+
+.navbar .navbar-nav > li > a .fa,
+.navbar .navbar-nav > li > a .fas,
+.navbar .navbar-nav > li > a svg,
+.navbar .navbar-nav .nav-link .fa,
+.navbar .navbar-nav .dropdown-toggle .fa,
+:where(ul.nav.navbar-nav > li) > a .fa,
+:where(ul.nav.navbar-nav > li) > a svg,
+.navbar-nav > li > a .fa {
+  color: #174A3A !important;
+  opacity: 0.9 !important;
+}
+
+.navbar .navbar-nav > li > a:hover,
+.navbar .navbar-nav .nav-link:hover,
+.navbar .navbar-nav .dropdown-toggle:hover,
+:where(ul.nav.navbar-nav > li) > a:hover,
+.navbar-nav > li > a:hover {
+  color: #0E3529 !important;
+  background-color: #E2ECE6 !important;
+  border-color: #B2CDC0 !important;
+  box-shadow: 0 2px 6px rgba(23, 74, 58, 0.12) !important;
+  transform: translateY(-1px);
+}
+
+.navbar .navbar-nav > li > a:hover .fa,
+.navbar .navbar-nav .nav-link:hover .fa,
+.navbar .navbar-nav .dropdown-toggle:hover .fa,
+:where(ul.nav.navbar-nav > li) > a:hover .fa {
+  color: #0E3529 !important;
+}
+
+/* Pestaña Activa */
+.navbar .navbar-nav > li.active > a,
+.navbar .navbar-nav > li > a.active,
+.navbar .navbar-nav .nav-link.active,
+:where(ul.nav.navbar-nav > li).active > a,
+.navbar-nav > li.active > a {
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg, var(--verde-inst), #0E3529) !important;
+  border-color: #0B2B22 !important;
+  box-shadow: 0 3px 10px rgba(27, 77, 62, 0.28) !important;
+}
+
+.navbar .navbar-nav > li.active > a .fa,
+.navbar .navbar-nav > li.active > a .fas,
+.navbar .navbar-nav > li.active > a svg,
+.navbar .navbar-nav .nav-link.active .fa,
+:where(ul.nav.navbar-nav > li).active > a .fa,
+:where(ul.nav.navbar-nav > li).active > a svg,
+.navbar-nav > li.active > a .fa {
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+/* Desplegable abierto o activo */
+.navbar .navbar-nav > li.dropdown.show > a,
+.navbar .navbar-nav > li.dropdown.open > a,
+.navbar .navbar-nav .dropdown-toggle[aria-expanded="true"] {
+  background-color: #E2ECE6 !important;
+  border-color: #B2CDC0 !important;
+  color: #0E3529 !important;
+}
+
+/* Caret / Flecha indicadora del desplegable */
+.navbar .dropdown-toggle .caret,
+.navbar .dropdown-toggle::after {
+  margin-left: 6px !important;
+  color: #174A3A !important;
+  border-top-color: #174A3A !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
+.navbar .navbar-nav > li.active > a .caret,
+.navbar .navbar-nav > li > a.active .caret,
+.navbar .navbar-nav > li.active > a::after {
+  color: #FFFFFF !important;
+  border-top-color: #FFFFFF !important;
+}
+
+/* Pestaña Desplegable (Dropdown) del Navbar */
+.navbar .dropdown-menu {
+  background-color: #FFFFFF !important;
+  border: 1px solid var(--verde-borde) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: 0 10px 25px -4px rgba(15, 45, 36, 0.15), 0 4px 10px -2px rgba(15, 45, 36, 0.08) !important;
+  padding: 0.45rem !important;
+  min-width: 260px !important;
+  margin-top: 6px !important;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.navbar .dropdown-menu > li > a,
+.navbar .dropdown-menu .dropdown-item {
+  color: #17251F !important;
+  background-color: transparent !important;
+  border: none !important;
+  font-weight: 500 !important;
+  font-size: 0.88rem !important;
+  padding: 0.55rem 0.85rem !important;
+  margin: 0 !important;
+  border-radius: var(--radius-sm) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.navbar .dropdown-menu > li > a .fa,
+.navbar .dropdown-menu > li > a svg,
+.navbar .dropdown-menu .dropdown-item .fa {
+  color: #174A3A !important;
+  opacity: 0.85 !important;
+}
+
+.navbar .dropdown-menu > li > a:hover,
+.navbar .dropdown-menu .dropdown-item:hover {
+  background-color: #EEF5F1 !important;
+  color: #174A3A !important;
+  transform: translateX(3px);
+}
+
+.navbar .dropdown-menu > li > a:hover .fa,
+.navbar .dropdown-menu .dropdown-item:hover .fa {
+  color: #174A3A !important;
+  opacity: 1 !important;
+}
+
+.navbar .dropdown-menu > li.active > a,
+.navbar .dropdown-menu > li > a.active,
+.navbar .dropdown-menu .dropdown-item.active {
+  background: linear-gradient(135deg, var(--verde-inst), #0E3529) !important;
+  color: #FFFFFF !important;
+}
+
+.navbar .dropdown-menu > li.active > a .fa,
+.navbar .dropdown-menu .dropdown-item.active .fa {
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+/* Botón Hamburguesa / Toggler en Navbar */
+.navbar-toggle,
+.navbar-toggler {
+  background-color: #F3F7F5 !important;
+  border: 1px solid #CFE0D7 !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 6px 10px !important;
+  margin-right: 0 !important;
+}
+
+.navbar-toggle:hover,
+.navbar-toggler:hover {
+  background-color: #E2ECE6 !important;
+  border-color: #B2CDC0 !important;
+}
+
+.navbar-toggle .icon-bar {
+  background-color: #174A3A !important;
+  display: block;
+  width: 22px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.navbar-toggle .icon-bar + .icon-bar {
+  margin-top: 4px;
+}
+
+/* Alineación en Pantallas de Escritorio (>=992px) */
+@media (min-width: 992px) {
+  .navbar-collapse {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-grow: 1 !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  .navbar .navbar-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin: 0 !important;
+  }
+}
+
+/* Indicadores de Nube / Status Pill */
+.status-pill-cloud {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.status-pill-online {
+  background-color: #EAF5EF;
+  color: #17603F;
+  border-color: #A9D2BC;
+}
+
+.status-pill-offline {
+  background-color: #F1F5F9;
+  color: #475569;
+  border-color: #CBD5E1;
+}
+
+.status-pill-local {
+  background-color: #EBF5FB;
+  color: #1B4F72;
+  border-color: #AED6F1;
+}
+
+/* --------------------------------------------------------------------------
+   SIDEBAR LATERAL DEL VISOR
+   -------------------------------------------------------------------------- */
+.bslib-sidebar-layout > .sidebar {
+  background-color: #FFFFFF !important;
+  border-right: 1px solid var(--border-card) !important;
+  box-shadow: 4px 0 24px rgba(15, 45, 36, 0.05);
+  padding: 1.1rem !important;
+}
+
+/* Botón GPS Móvil de Alta Visibilidad */
+.btn-gps-mobile {
+  background: linear-gradient(135deg, #1B4D3E, #0E382B) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  box-shadow: 0 4px 12px rgba(27, 77, 62, 0.22);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-gps-mobile:hover {
+  background: linear-gradient(135deg, #246350, #144535) !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(27, 77, 62, 0.32);
+}
+
+.btn-gps-mobile:active {
+  transform: translateY(0);
+}
+
+/* Pestañas de Modo (Pills) */
+.nav-pills {
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #E2E8F0;
+}
+
+.nav-pills .nav-link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-secundario) !important;
+  border-radius: 5px;
+  padding: 6px 12px;
+  transition: all 0.15s ease;
+}
+
+.nav-pills .nav-link:hover {
+  color: var(--verde-inst) !important;
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.nav-pills .nav-link.active {
+  color: #FFFFFF !important;
+  background: var(--verde-inst) !important;
+  box-shadow: 0 2px 6px rgba(27, 77, 62, 0.25);
+}
+
+/* Formularios e Inputs */
+.form-control, .form-select {
+  border-radius: var(--radius-sm);
+  border: 1px solid #CBD5E1;
+  font-size: 0.88rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--verde-inst);
+  box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   TARJETAS Y FICHAS TÉCNICAS DEL PREDIO
+   -------------------------------------------------------------------------- */
+.ficha-container {
+  background: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ficha-container:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.ficha-header {
+  padding: 10px 14px;
+  color: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ficha-body {
+  padding: 12px;
+}
+
+.param-table {
+  width: 100%;
+  margin-bottom: 0;
+  font-size: 0.85rem;
+}
+
+.param-table th {
+  width: 44%;
+  background-color: #F8FAFC;
+  color: var(--texto-secundario);
+  font-weight: 600;
+  padding: 6px 8px;
+  border-bottom: 1px solid #E2E8F0;
+  vertical-align: middle;
+}
+
+.param-table td {
+  padding: 6px 8px;
+  color: var(--texto-principal);
+  border-bottom: 1px solid #E2E8F0;
+  vertical-align: middle;
+}
+
+/* --------------------------------------------------------------------------
+   CATÁLOGO NORMATIVO: PRESENTACIÓN EJECUTIVA E INSTITUCIONAL
+   -------------------------------------------------------------------------- */
+.catalogo-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg) !important;
+  border-top: 4px solid var(--verde-inst) !important;
+  box-shadow: 0 12px 32px rgba(11, 43, 34, 0.08) !important;
+}
+
+.catalogo-title {
+  color: var(--verde-oscuro);
+  letter-spacing: -0.35px;
+}
+
+.catalogo-title svg,
+.catalogo-title .fa,
+.catalogo-title .fas {
+  color: var(--dorado-inst);
+}
+
+.catalogo-kpi {
+  min-height: 78px;
+  background: linear-gradient(145deg, #FFFFFF, #F1F5F3);
+  border-color: #D7E2DC !important;
+  box-shadow: 0 2px 8px rgba(11, 43, 34, 0.05);
+}
+
+.catalogo-kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 42px;
+  box-shadow: 0 3px 9px rgba(11, 43, 34, 0.16);
+}
+
+.catalogo-kpi-icon--green {
+  background: var(--verde-inst);
+}
+
+.catalogo-kpi-icon--gold {
+  background: var(--dorado-inst);
+}
+
+.catalogo-kpi-icon--dark {
+  background: var(--verde-oscuro);
+}
+
+.catalogo-table-wrap {
+  border: 1px solid #CBD8D1;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.catalogo-table {
+  min-width: 1120px;
+  margin-bottom: 0 !important;
+  color: var(--texto-principal);
+  font-size: 0.84rem;
+  --bs-table-hover-bg: #EAF2EE;
+  --bs-table-hover-color: var(--texto-principal);
+}
+
+/* Bootstrap colorea cada celda, por eso el fondo debe aplicarse al th. */
+.catalogo-table > thead > tr > th {
+  background: linear-gradient(180deg, #1D5745 0%, var(--verde-inst) 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #2F6756 !important;
+  border-bottom: 3px solid var(--dorado-inst) !important;
+  padding: 0.82rem 0.72rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.catalogo-table > tbody > tr > td {
+  background-color: #FFFFFF;
+  border-color: #DEE7E2;
+  padding: 0.76rem 0.72rem;
+  line-height: 1.45;
+  vertical-align: middle;
+}
+
+.catalogo-table > tbody > tr:nth-child(even) > td {
+  background-color: #F5F8F6;
+}
+
+.catalogo-table > tbody > tr:hover > td {
+  background-color: #EAF2EE !important;
+}
+
+.catalogo-table th:nth-child(2),
+.catalogo-table td:nth-child(2) {
+  min-width: 210px;
+}
+
+.catalogo-table th:last-child,
+.catalogo-table td:last-child {
+  min-width: 245px;
+}
+
+.catalogo-table .badge.bg-secondary {
+  background-color: #51655C !important;
+}
+
+.catalogo-table .badge.text-bg-warning {
+  color: #593F08 !important;
+  background-color: #F2D98B !important;
+  border: 1px solid #D3AF45;
+}
+
+.alert-warning {
+  color: #5E430B !important;
+  background-color: var(--dorado-fondo) !important;
+  border-color: var(--dorado-borde) !important;
+}
+
+#ui_metricas_publicas .badge {
+  color: #3E5148 !important;
+  background-color: #F1F5F3 !important;
+  border-color: #D3DED8 !important;
+}
+
+/* Indicadores de Ámbito */
+.alert-ambito-ok {
+  background: linear-gradient(135deg, #ECFDF5, #F0FDF4);
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+  border-left: 4px solid #059669;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.alert-ambito-fuera {
+  background: linear-gradient(135deg, #FEF2F2, #FFF1F2);
+  color: #991B1B;
+  border: 1px solid #FECACA;
+  border-left: 4px solid #DC2626;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+/* Tarjeta Vial */
+.card-vial-info {
+  background-color: var(--dorado-fondo);
+  border: 1px solid var(--dorado-borde);
+  border-left: 4px solid var(--dorado-inst);
+  color: #78350F;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.badge-seccion-vial {
+  background: linear-gradient(135deg, var(--dorado-inst), var(--dorado-oscuro));
+  color: #FFFFFF;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.3px;
+}
+
+/* Servidumbres */
+.alert-servidumbre {
+  border: 1px solid #FECACA;
+  border-left: 4px solid var(--rojo-alerta);
+  background-color: var(--rojo-fondo);
+  color: #991B1B;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.83rem;
+}
+
+.alert-servidumbre-ferro {
+  border: 1px solid #DDD6FE;
+  border-left: 4px solid #7C3AED;
+  background-color: #F5F3FF;
+  color: #5B21B6;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.83rem;
+}
+
+/* --------------------------------------------------------------------------
+   BOTONES DE ACCIÓN Y DESCARGA
+   -------------------------------------------------------------------------- */
+.btn-success, .btn-primary {
+  background: linear-gradient(135deg, var(--verde-inst), var(--verde-hover)) !important;
+  border-color: var(--verde-inst) !important;
+  color: #FFFFFF !important;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px rgba(27, 77, 62, 0.20);
+  transition: all 0.2s ease;
+}
+
+.btn-success:hover, .btn-primary:hover {
+  background: linear-gradient(135deg, #246350, #144535) !important;
+  border-color: #246350 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(27, 77, 62, 0.30);
+}
+
+.btn-download-pdf {
+  background: linear-gradient(135deg, #B91C1C, #991B1B) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 3px 10px rgba(185, 28, 28, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-download-pdf:hover {
+  background: linear-gradient(135deg, #DC2626, #B91C1C) !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   ESTILOS PARA CONTROLES DE LEAFLET
+   -------------------------------------------------------------------------- */
+.leaflet-bar {
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid #CBD5E1 !important;
+}
+
+.leaflet-bar a {
+  background-color: #FFFFFF !important;
+  color: var(--texto-principal) !important;
+  transition: background-color 0.15s ease;
+}
+
+.leaflet-bar a:hover {
+  background-color: #F1F5F9 !important;
+  color: var(--verde-inst) !important;
+}
+
+.leaflet-control-layers {
+  border-radius: var(--radius-md) !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: var(--shadow-md) !important;
+  font-family: inherit !important;
+  font-size: 0.85rem !important;
+  padding: 8px 12px !important;
+}
+
+/* Leyenda cartográfica ejecutiva del sistema vial */
+.leyenda-vial-shell {
+  margin: 0 12px 14px 0 !important;
+}
+
+.leyenda-vial {
+  min-width: 205px;
+  padding: 11px 13px 10px;
+  color: var(--texto-principal);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #CBD8D1;
+  border-top: 3px solid var(--verde-inst);
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(11, 43, 34, 0.16);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.leyenda-vial__titulo {
+  color: var(--verde-oscuro);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.leyenda-vial__subtitulo {
+  margin: 2px 0 8px;
+  color: var(--texto-muted);
+  font-size: 0.67rem;
+}
+
+.leyenda-vial__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+  color: #34463E;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.leyenda-vial__item svg {
+  width: 42px;
+  height: 8px;
+  flex: 0 0 42px;
+  overflow: visible;
+}
+
+@media (max-width: 767.98px) {
+  .leyenda-vial {
+    min-width: 175px;
+    padding: 8px 10px;
+  }
+
+  .leyenda-vial__subtitulo {
+    display: none;
+  }
+
+  .leyenda-vial__item {
+    min-height: 19px;
+    font-size: 0.66rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ESTILOS DE LA PESTAÑA BUZÓN CIUDADANO (SUPABASE)
+   -------------------------------------------------------------------------- */
+.card-buzon {
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.card-buzon-header {
+  background: linear-gradient(135deg, var(--verde-inst), #0F2D24);
+  color: #FFFFFF;
+  padding: 24px 30px;
+  border-bottom: 3px solid var(--dorado-inst);
+}
+
+.badge-cloud-tag {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   HERO BANNER DE INFORMACIÓN INSTITUCIONAL
+   -------------------------------------------------------------------------- */
+.hero-pdu {
+  background: linear-gradient(135deg, #1B4D3E 0%, #0F2D24 60%, #16382C 100%);
+  color: #FFFFFF;
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  box-shadow: var(--shadow-lg);
+  border-bottom: 4px solid var(--dorado-inst);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-pdu::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(197, 155, 39, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   OPTIMIZACIÓN DE REACTIVIDAD Y RESPONSIVIDAD PARA DISPOSITIVOS MÓVILES
+   ========================================================================== */
+
+/* 1. Control de desbordamiento horizontal y ancho completo en móviles */
+html, body {
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  position: relative;
+  -webkit-text-size-adjust: 100%;
+}
+
+.container-fluid, .container {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 2. Navbar institucional responsivo en móviles y tablets (<992px) */
+@media (max-width: 991.98px) {
+  .navbar {
+    padding: 0.35rem 0.65rem !important;
+  }
+  
+  .navbar .container-fluid {
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100% !important;
+  }
+  
+  .brand-logo-left {
+    padding: 2px 6px !important;
+  }
+  
+  .logo-muni-header {
+    height: 32px !important;
+  }
+  
+  .header-brand-title {
+    font-size: 0.95rem !important;
+    letter-spacing: -0.2px !important;
+  }
+  
+  .pdu-badge-title {
+    font-size: 0.68rem !important;
+    padding: 2px 6px !important;
+  }
+  
+  .header-badge-aprobado {
+    font-size: 0.64rem !important;
+    padding: 2px 5px !important;
+  }
+
+  .navbar-toggler,
+  .navbar-toggle {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.85rem !important;
+    border-color: var(--verde-borde) !important;
+  }
+
+  .navbar-collapse {
+    background: #FFFFFF !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: 0 8px 24px rgba(15, 45, 36, 0.15) !important;
+    padding: 0.75rem !important;
+    margin-top: 0.5rem !important;
+    border: 1px solid var(--verde-borde) !important;
+  }
+
+  .navbar .navbar-nav {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  .navbar .navbar-nav > li > a,
+  .navbar .navbar-nav .nav-link,
+  .navbar .navbar-nav .dropdown-toggle,
+  :where(ul.nav.navbar-nav > li) > a {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    padding: 0.65rem 0.85rem !important;
+    margin: 2px 0 !important;
+    border-radius: var(--radius-sm) !important;
+    box-sizing: border-box !important;
+  }
+
+  .navbar .dropdown-menu {
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: none !important;
+    background-color: #F8FAF9 !important;
+    margin-top: 4px !important;
+    margin-left: 0.5rem !important;
+    width: calc(100% - 1rem) !important;
+  }
+}
+
+/* 3. Visor Territorial y Layout de Sidebar en Móviles */
+@media (max-width: 767.98px) {
+  .bslib-sidebar-layout {
+    width: 100% !important;
+    max-width: 100vw !important;
+    --_sidebar-width: 100vw !important;
+    grid-template-columns: 100% !important;
+  }
+
+  .bslib-sidebar-layout > .sidebar {
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding: 0.85rem !important;
+    box-sizing: border-box !important;
+  }
+
+  .bslib-sidebar-layout > .main {
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding: 0 !important;
+    min-height: calc(100dvh - 66px) !important;
+  }
+
+  #mapa_pdu,
+  .leaflet-container {
+    height: calc(100dvh - 66px) !important;
+    height: calc(100vh - 66px) !important;
+    min-height: 480px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+}
+
+/* 4. Reporte Informativo y Certificado en Móviles */
+@media (max-width: 767.98px) {
+  .cert-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .reporte-disclaimer {
+    font-size: 0.76rem !important;
+    padding: 8px 12px !important;
+  }
+
+  .table-cert {
+    font-size: 0.76rem !important;
+  }
+
+  .table-cert th, .table-cert td {
+    padding: 4px 6px !important;
+  }
+
+  .mapa-img-fullpage {
+    max-height: 380px !important;
+    width: 100% !important;
+  }
+}
+
+/* 5. Catálogo Normativo y PDU en Móviles */
+@media (max-width: 767.98px) {
+  .catalogo-card {
+    padding: 1rem !important;
+  }
+
+  .hero-pdu {
+    padding: 1.2rem !important;
+  }
+}
+
+/* ==========================================================================
+   BANNER DE CONSENTIMIENTO OPT-IN (LEY N° 29733 Y ESTÁNDARES INTERNACIONALES)
+   Garantiza simetría de prominencia visual entre "Aceptar" y "Rechazar"
+   ========================================================================== */
+.banner-consent-shell {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 2px solid var(--verde-borde);
+  box-shadow: 0 -8px 30px rgba(15, 45, 36, 0.16);
+  padding: 1rem 1.25rem;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+.banner-consent-shell.banner-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.banner-consent-card {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.consent-title {
+  color: var(--verde-inst);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.consent-desc {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #334155 !important;
+}
+
+.consent-link-info {
+  color: var(--verde-inst);
+  font-weight: 600;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.consent-link-info:hover {
+  color: var(--verde-hover);
+}
+
+.consent-buttons-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Ambos botones tienen IDÉNTICA prominencia visual (mismo tamaño, borde, tipografía y peso) */
+.btn-consent-action {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-size: 0.88rem !important;
+  font-weight: 600 !important;
+  padding: 0.55rem 1.25rem !important;
+  min-width: 125px !important;
+  border-radius: var(--radius-sm) !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease-in-out !important;
+  text-align: center !important;
+  text-decoration: none !important;
+  box-sizing: border-box !important;
+  line-height: 1.3 !important;
+}
+
+/* Botón Rechazar: Estilo sólido neutro pizarra con idéntico peso visual */
+.btn-consent-reject {
+  background-color: #F1F5F9 !important;
+  color: #334155 !important;
+  border: 1.5px solid #94A3B8 !important;
+}
+
+.btn-consent-reject:hover {
+  background-color: #E2E8F0 !important;
+  color: #0F172A !important;
+  border-color: #64748B !important;
+  transform: translateY(-1px);
+}
+
+/* Botón Aceptar: Estilo sólido bosque institucional con idéntico peso visual */
+.btn-consent-accept {
+  background-color: #F1F6F3 !important;
+  color: #174A3A !important;
+  border: 1.5px solid #174A3A !important;
+}
+
+.btn-consent-accept:hover {
+  background-color: #174A3A !important;
+  color: #FFFFFF !important;
+  border-color: #0E3529 !important;
+  transform: translateY(-1px);
+}
+
+.btn-consent-accept:hover .fa,
+.btn-consent-accept:hover svg {
+  color: #FFFFFF !important;
+}
+
+/* Modal de Privacidad */
+.privacy-modal-body {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #1E293B;
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+@media (max-width: 767.98px) {
+  .banner-consent-shell {
+    padding: 0.85rem 0.75rem;
+  }
+  .consent-buttons-wrap {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+  .btn-consent-action {
+    flex: 1 1 50%;
+    min-width: 0 !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.82rem !important;
+  }
+}
+
+/* ==========================================================================
+   ESTILOS DEL MÓDULO INFORMACIÓN INSTITUCIONAL DEL PDU
+   ========================================================================== */
+.pdu-info-card {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-card);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s ease;
+}
+
+.pdu-info-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.pdu-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  margin-bottom: 18px;
+  border-bottom: 2px solid #E2E8F0;
+}
+
+.pdu-section-header h4,
+.pdu-section-header h5 {
+  margin: 0;
+  font-weight: 700;
+  color: var(--verde-inst);
+}
+
+.pdu-ordenanza-card {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAF9 100%);
+  border-radius: var(--radius-md);
+  border: 1px solid #D6E4DE;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pdu-ordenanza-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.pdu-ordenanza-card--aprobacion {
+  border-top: 4px solid var(--verde-inst);
+}
+
+.pdu-ordenanza-card--actualizacion {
+  border-top: 4px solid var(--dorado-inst);
+}
+
+.pdu-eje-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.pdu-eje-card:hover {
+  border-color: #174A3A;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.pdu-eje-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background-color: var(--verde-claro);
+  color: var(--verde-inst);
+  border: 1px solid var(--verde-borde);
+  margin-bottom: 8px;
+}
+
+.pdu-criterio-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background-color: #F1F5F3;
+  color: #1E3A2F;
+  border: 1px solid #CBDCD3;
+  margin: 3px 4px 3px 0;
+  transition: background-color 0.2s;
+}
+
+.pdu-criterio-chip:hover {
+  background-color: #E2ECE6;
+}
+
+.pdu-sector-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #E2E8F0;
+}
+
+.pdu-sector-table thead th {
+  background-color: var(--verde-inst);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 14px;
+  border: none;
+}
+
+.pdu-sector-table tbody td {
+  padding: 12px 14px;
+  font-size: 0.90rem;
+  color: #1E293B;
+  vertical-align: middle;
+  border-top: 1px solid #EAEFEA;
+}
+
+.pdu-sector-table tbody tr:nth-of-type(even) {
+  background-color: #F8FAF9;
+}
+
+.pdu-sector-table tbody tr:hover {
+  background-color: #EEF5F1;
+}
+
+.pdu-sector-table tfoot td {
+  background-color: #E8F0EC;
+  font-weight: 700;
+  color: var(--verde-inst);
+  padding: 12px 14px;
+  border-top: 2px solid var(--verde-inst);
+}
+
+.pdu-mini-progress {
+  height: 8px;
+  border-radius: 4px;
+  background-color: #E2E8F0;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.pdu-mini-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--verde-inst) 0%, #2E7D32 100%);
+}
+
+.pdu-kpi-box {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.pdu-kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.pdu-kpi-icon--green {
+  background-color: var(--verde-claro);
+  color: var(--verde-inst);
+  border: 1px solid var(--verde-borde);
+}
+
+.pdu-kpi-icon--gold {
+  background-color: var(--dorado-fondo);
+  color: var(--dorado-oscuro);
+  border: 1px solid var(--dorado-borde);
+}

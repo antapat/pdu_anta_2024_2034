@@ -1,0 +1,21 @@
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+.codex_spreadsheet/
+outputs/
+renv/library/
+renv/staging/
+rsconnect/
+*.lock
+
+.Rproj.user
+.httr-oauth
+.DS_Store
+.quarto
+.env
+.Renviron
+datos_supabase.R
+# Datos espaciales locales: se almacenan en Supabase, no en GitHub.
+/data/
+/shp_pdu_anta/
