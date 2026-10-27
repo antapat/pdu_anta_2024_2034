@@ -19,3 +19,8 @@ datos_supabase.R
 # Datos espaciales locales: se almacenan en Supabase, no en GitHub.
 /data/
 /shp_pdu_anta/
+
+# Secciones viales y planos gráficos
+/seccion_vias/
+/secciones_viales/
+/data/secciones_viales/
