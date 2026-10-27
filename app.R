@@ -372,10 +372,7 @@ ui <- page_navbar(
         
         hr(class = "my-3"),
         
-        # Panel de Resultados (Ficha Técnica y Descargas)
-        div(class = "fw-bold mb-2", style = "color: #006633;", icon("clipboard-check"), " Ficha Técnica Referencial"),
-        div(class = "alert alert-warning py-2 px-3 small", CARACTER_INFORMATIVO),
-        uiOutput("ui_ficha_resultado"),
+        # Acceso al Reporte Informativo y Descarga
         uiOutput("ui_botones_descarga")
       ),
       
@@ -1148,276 +1145,79 @@ server <- function(input, output, session) {
   }
   
   # ----------------------------------------------------------------------------
-  # 2.4 RENDERIZADO DINÁMICO DE LA FICHA TÉCNICA
+  # 2.4 RETIRO DE LA FICHA TÉCNICA DEL PANEL LATERAL
+  # (La información técnica se despliega exclusivamente en el Módulo Reporte Informativo)
   # ----------------------------------------------------------------------------
-  output$ui_ficha_resultado <- renderUI({
-    modo <- modo_activo()
-    
-    if (modo == "punto") {
-      pt_data <- punto_actual()
-      if (is.null(pt_data)) {
-        return(
-          div(
-            class = "text-center py-4 text-muted",
-            icon("hand-pointer", class = "fs-2 mb-2 d-block text-secondary"),
-            tags$b("Haga clic en el mapa"), " o use el botón GPS para consultar un predio."
-          )
-        )
-      }
-      
-      pt_sf <- st_sf(geometry = pt_data$geom_4326)
-      en_ambito <- any(st_intersects(pt_sf, capas$ambito, sparse = FALSE)[1, ])
-      dist_match <- st_join(pt_sf, capas$distritos, join = st_intersects)$NOMBDIST[1]
-      distrito_nombre <- if (!nrow(capas$distritos)) "Distrito no disponible en datos locales" else if (!is.na(dist_match)) dist_match else "Fuera de la provincia"
-      en_serv_at <- any(st_intersects(pt_sf, capas$alta_tension_buffer, sparse = FALSE)[1, ])
-      en_serv_ffcc <- any(st_intersects(pt_sf, capas$ferrocarril_buffer, sparse = FALSE)[1, ])
-      
-      # Vía propuesta más cercana (buffer 25m)
-      vias_utm <- st_transform(capas$vias, 32718)
-      dists_v <- as.numeric(st_distance(pt_data$geom_utm, vias_utm))
-      idx_min_v <- which.min(dists_v)
-      min_dist_v <- dists_v[idx_min_v]
-      
-      info_via <- NULL
-      if (length(min_dist_v) > 0 && min_dist_v <= 25) {
-        info_via <- list(
-          SIS_VIAL = capas$vias$SIS_VIAL[idx_min_v],
-          COD_VIA_PR = capas$vias$COD_VIA_PR[idx_min_v],
-          SECCION_VI = capas$vias$SECCION_VI[idx_min_v],
-          distancia = round(min_dist_v, 3)
-        )
-      }
-      
-      idx_zonif_punto <- st_intersects(pt_sf, capas$zonificacion)[[1]]
-      zonificacion_ambigua <- length(idx_zonif_punto) > 1
-      if (length(idx_zonif_punto) > 0) {
-        zonif_match <- capas$zonificacion[idx_zonif_punto[1], ]
-        cod_zona <- zonif_match$COD_ZONA[1]
-        cod_s_zona <- zonif_match$COD_S_ZONA[1]
-        sub_zona <- zonif_match$SUB_ZONA[1]
-      } else {
-        cod_zona <- cod_s_zona <- sub_zona <- NA_character_
-      }
-      
-      params_row <- NULL
-      if (!is.na(cod_s_zona) && cod_s_zona != "") {
-        m_idx <- which(trimws(df_parametros$COD_S_ZONA) == trimws(cod_s_zona))
-        if (length(m_idx) > 0) params_row <- pdu_buscar_parametros(df_parametros, cod_s_zona)[[1]]
-      }
-      
-      tagList(
-        if (!ambito_disponible) "Ámbito no disponible en datos locales" else if (en_ambito) div(class = "alert-ambito-ok mb-2", icon("circle-check"), " DENTRO del Ámbito PDU Anta")
-        else div(class = "alert-ambito-fuera mb-2", icon("triangle-exclamation"), " FUERA del Ámbito PDU Anta"),
-        
-        # Bloque de Información Vial (buffer 25m)
-        if (!is.null(info_via)) {
-          div(
-            class = "card-vial-info mb-2",
-            div(class = "d-flex justify-content-between align-items-center mb-1",
-                tags$b(icon("road"), " Vía Propuesta Colindante:"),
-                tags$span(class = "badge-seccion-vial", info_via$SECCION_VI)
-            ),
-            div(
-              tags$span(class = "fw-bold", info_via$SIS_VIAL),
-              tags$br(),
-              tags$small(paste0("Código: ", info_via$COD_VIA_PR, " (a ", info_via$distancia, " m)"))
-            )
-          )
-        } else {
-          div(class = "card p-2 mb-2 bg-light text-muted small",
-              icon("road"), " Sin vía propuesta del PDU en buffer de 25m.")
-        },
-        
-        if (en_serv_at) div(class = "alert-servidumbre", icon("triangle-exclamation"), tags$b(" Servidumbre de Alta Tensión (Prohibida edificación).")),
-        if (en_serv_ffcc) div(class = "alert-servidumbre-ferro", icon("train"), tags$b(" Proximidad a la zona de influencia del ferrocarril. Verificar el derecho de vía con el MTC y el concesionario.")),
-        if (!is.null(pt_data$precision) && is.finite(pt_data$precision) && pt_data$precision > 10) {
-          div(class = "alert alert-warning py-2 small", icon("location-crosshairs"),
-              paste0("Precisión GPS aproximada: ±", pt_data$precision, " m. Verifique el punto antes de usar el resultado."))
-        },
-        if (zonificacion_ambigua) {
-          div(class = "alert alert-warning py-2 small", icon("triangle-exclamation"),
-              "El punto coincide con un límite de zonificación. Se requiere verificación cartográfica municipal.")
-        },
-        
-        if (!is.na(cod_zona) && !is.null(params_row)) {
-          color_h <- colores_zonas[cod_zona]
-          if (is.na(color_h)) color_h <- "#008800"
-          div(
-            class = "ficha-container mb-2",
-            div(
-              class = "ficha-header", style = paste0("background: linear-gradient(135deg, ", color_h, ", #202020);"),
-              div(tags$h6(class = "mb-0 fw-bold", paste(cod_s_zona, "-", cod_zona)), tags$small(sub_zona)),
-              tags$span(class = "badge bg-light text-dark", cod_zona)
-            ),
-            div(
-              class = "ficha-body",
-              tags$table(
-                class = "param-table",
-                tags$tbody(
-                  tags$tr(tags$th("Distrito:"), tags$td(tags$b(distrito_nombre))),
-                  tags$tr(tags$th("Densidad Neta:"), tags$td(params_row$DENSIDAD_NETA_MAX)),
-                  tags$tr(tags$th("Lote Mínimo:"), tags$td(params_row$LOTE_MINIMO)),
-                  tags$tr(tags$th("Frente Mínimo:"), tags$td(params_row$FRENTE_MINIMO)),
-                  tags$tr(tags$th("Altura Máxima:"), tags$td(tags$b(style = "color: #006633;", params_row$ALTURA_MAXIMA))),
-                  tags$tr(tags$th("Área Libre:"), tags$td(params_row$AREA_LIBRE_MIN)),
-                  tags$tr(tags$th("Coef. Edificación:"), tags$td(params_row$COEFICIENTE_EDIF)),
-                  tags$tr(tags$th("Retiros:"), tags$td(params_row$RETIRO_FRONTAL)),
-                  tags$tr(tags$th("Usos Permitidos:"), tags$td(tags$small(params_row$USOS_PERMITIDOS))),
-                  pdu_filas_reglamento(params_row)
-                )
-              )
-            )
-          )
-        } else {
-          div(class = "alert alert-warning mb-2", "Sin zonificación reglamentada en este punto.")
-        },
-        
-        div(class = "text-muted small text-end", paste0("UTM 18S: E ", pt_data$este, " | N ", pt_data$norte))
-      )
-      
-    } else {
-      # Ficha técnica para polígono
-      poly_data <- poligono_actual()
-      if (is.null(poly_data)) {
-        return(
-          div(
-            class = "text-center py-4 text-muted",
-            icon("draw-polygon", class = "fs-2 mb-2 d-block text-secondary"),
-            tags$b("Ingrese un polígono"), " para ver el cálculo de zonificación y afectaciones."
-          )
-        )
-      }
-      
-      tagList(
-        div(
-          class = "card p-2 mb-2 bg-light border-0",
-          div(class = "d-flex justify-content-between", tags$b("Área del Predio:"), tags$span(paste0(poly_data$area_m2, " m² (", poly_data$area_has, " ha)"))),
-          div(class = "d-flex justify-content-between", tags$b("Perímetro:"), tags$span(paste0(poly_data$perimetro_m, " ml"))),
-          div(class = "d-flex justify-content-between", tags$b("Distrito(s):"), tags$span(paste(poly_data$distritos, collapse = ", "))),
-          div(class = "d-flex justify-content-between", tags$b("Ámbito PDU:"), tags$span(if (!ambito_disponible) "No disponible" else paste0(poly_data$pct_en_ambito, "% en ámbito")))
-        ),
-        
-        # Bloque de Vías Propuestas detectadas (buffer 25m)
-        if (nrow(poly_data$tabla_vias_predio) > 0) {
-          div(
-            class = "card-vial-info mb-2",
-            div(class = "fw-bold mb-1", style = "color: #B88808;", icon("road"), " Vías Propuestas en Buffer de 25m:"),
-            lapply(1:nrow(poly_data$tabla_vias_predio), function(iv) {
-              rv <- poly_data$tabla_vias_predio[iv, ]
-              div(
-                class = "d-flex justify-content-between align-items-center py-1 border-bottom border-light",
-                div(
-                  tags$b(rv$SIS_VIAL), tags$br(),
-                  tags$small(paste0("Cód: ", rv$COD_VIA_PR, " (a ", rv$DISTANCIA_M, " m)"))
-                ),
-                tags$span(class = "badge-seccion-vial", rv$SECCION_VI)
-              )
-            })
-          )
-        } else {
-          div(class = "card p-2 mb-2 bg-light text-muted small",
-              icon("road"), " Sin vías propuestas del PDU dentro del buffer de 25m.")
-        },
-        
-        if (poly_data$pct_at > 0) {
-          div(class = "alert-servidumbre mb-2", icon("triangle-exclamation"),
-              tags$b(paste0(" Servidumbre de Alta Tensión afecta ", poly_data$pct_at, "% del predio (", poly_data$area_at_m2, " m²). Prohibida edificación.")))
-        },
-        if (poly_data$pct_ffcc > 0) {
-          div(class = "alert-servidumbre-ferro mb-2", icon("train"),
-              tags$b(paste0(" Zona de influencia del ferrocarril alcanza ", poly_data$pct_ffcc, "% del predio (", poly_data$area_ffcc_m2, " m²). Requiere verificación sectorial.")))
-        },
-        
-        if (nrow(poly_data$tabla_zonif) > 0) {
-          div(
-            class = "card mb-2 border-0 shadow-sm",
-            div(class = "card-header bg-success text-white py-1 px-2 fw-bold small", "Desglose de Zonificación:"),
-            div(
-              class = "card-body p-0",
-              tags$table(
-                class = "table table-sm table-striped mb-0 small",
-                tags$thead(tags$tr(tags$th("Zona"), tags$th("Subzona"), tags$th("Área (m²)"), tags$th("%"))),
-                tags$tbody(
-                  lapply(1:nrow(poly_data$tabla_zonif), function(i) {
-                    r <- poly_data$tabla_zonif[i, ]
-                    tags$tr(
-                      tags$td(tags$b(r$COD_ZONA)),
-                      tags$td(r$COD_S_ZONA),
-                      tags$td(r$AREA_M2),
-                      tags$td(tags$b(paste0(r$PCT_LOTE, "%")))
-                    )
-                  })
-                )
-              )
-            )
-          )
-        },
-        
-        if (length(poly_data$lista_parametros_zonas) > 0) {
-          tagList(
-            h6(class = "fw-bold mt-2 mb-2", style = "color: #006633;", icon("book"), " Parámetros por Zona Intersectada:"),
-            lapply(poly_data$lista_parametros_zonas, function(p_row) {
-              col_z <- colores_zonas[p_row$COD_ZONA]
-              if (is.na(col_z)) col_z <- "#008800"
-              div(
-                class = "ficha-container mb-2",
-                div(
-                  class = "ficha-header",
-                  style = paste0("background: linear-gradient(135deg, ", col_z, ", #202020); font-size: 0.85rem;"),
-                  div(
-                    tags$b(paste(p_row$COD_S_ZONA, "-", p_row$NOMBRE_COMPLETO)),
-                    tags$br(),
-                    tags$small(paste0("Afecta: ", p_row$AREA_AFECTADA_M2, " m² (", p_row$PCT_AFECTADO, "% del lote)"))
-                  ),
-                  tags$span(class = "badge bg-light text-dark", p_row$COD_ZONA)
-                ),
-                div(
-                  class = "ficha-body p-2",
-                  tags$table(
-                    class = "param-table",
-                    tags$tbody(
-                      tags$tr(tags$th("Densidad Neta:"), tags$td(p_row$DENSIDAD_NETA_MAX)),
-                      tags$tr(tags$th("Lote Mínimo:"), tags$td(p_row$LOTE_MINIMO)),
-                      tags$tr(tags$th("Frente Mínimo:"), tags$td(p_row$FRENTE_MINIMO)),
-                      tags$tr(tags$th("Altura Máx.:"), tags$td(tags$b(style = "color: #006633;", p_row$ALTURA_MAXIMA))),
-                      tags$tr(tags$th("Área Libre:"), tags$td(p_row$AREA_LIBRE_MIN)),
-                      tags$tr(tags$th("Coeficiente de Edificabilidad:"), tags$td(p_row$COEFICIENTE_EDIF)),
-                      tags$tr(tags$th("Retiros:"), tags$td(p_row$RETIRO_FRONTAL)),
-                      tags$tr(tags$th("Usos:"), tags$td(tags$small(p_row$USOS_PERMITIDOS))),
-                      pdu_filas_reglamento(p_row)
-                    )
-                  )
-                )
-              )
-            })
-          )
-        }
-      )
-    }
-  })
+  output$ui_ficha_resultado <- renderUI(NULL)
   
   # ----------------------------------------------------------------------------
-  # 2.6 BOTONES DE CONSULTA Y ACCIONES DEL CERTIFICADO
+  # 2.6 ACCIONES DE CONSULTA Y ACCESO AL REPORTE INFORMATIVO
   # ----------------------------------------------------------------------------
   output$ui_botones_descarga <- renderUI({
     modo <- modo_activo()
-    if (modo == "punto" && is.null(punto_actual())) return(NULL)
-    if (modo == "poligono" && is.null(poligono_actual())) return(NULL)
+    hay_consulta <- (modo == "punto" && !is.null(punto_actual())) ||
+                    (modo == "poligono" && !is.null(poligono_actual()))
+    
+    if (!hay_consulta) {
+      return(
+        div(
+          class = "text-center py-4 text-muted small",
+          icon("hand-pointer", class = "fs-2 mb-2 d-block text-secondary"),
+          tags$b("Haga clic en el mapa"), " o use coordenadas / polígono para iniciar una consulta territorial."
+        )
+      )
+    }
+    
+    pt_data <- punto_actual()
+    poly_data <- poligono_actual()
     
     div(
-      class = "d-flex flex-column gap-2 mt-3",
-      actionButton(
-        "btn_abrir_certificado_tab", "📋 Ver Reporte Informativo",
-        class = "btn btn-success fw-bold w-100",
-        style = "padding: 10px;",
-        icon = icon("file-invoice")
+      class = "card border-0 shadow-sm p-3 mb-2",
+      style = "background-color: #F8FAFC; border-left: 4px solid #008800 !important; border-radius: 8px;",
+      div(
+        class = "d-flex align-items-center gap-2 mb-2",
+        icon("circle-check", style = "color: #008800; font-size: 1.15rem;"),
+        tags$b(style = "color: #006633; font-size: 0.95rem;",
+               if (modo == "punto") "Punto Consultado" else "Polígono Consultado")
       ),
-      if (pdf_motor_disponible()) {
-        downloadButton("btn_descargar_pdf", "📥 Descargar Constancia PDF", class = "btn btn-download-pdf w-100")
-      } else {
-        div(class = "alert alert-secondary py-2 px-3 small mb-0",
-            "La constancia informativa se consulta directamente en la pestaña Reporte Informativo.")
-      }
+      div(
+        class = "small text-muted mb-2",
+        if (modo == "punto") {
+          tagList(
+            tags$div(tags$b("Coordenadas UTM 18S: "), paste0("E: ", round(pt_data$este, 2), " m | N: ", round(pt_data$norte, 2), " m")),
+            if (!is.null(pt_data$precision) && is.finite(pt_data$precision) && pt_data$precision > 10) {
+              tags$div(class = "text-warning small mt-1", icon("location-crosshairs"), paste0(" Precisión GPS: ±", round(pt_data$precision, 1), " m"))
+            }
+          )
+        } else {
+          tagList(
+            tags$div(tags$b("Área del Predio: "), paste0(poly_data$area_m2, " m² (", poly_data$area_has, " ha)")),
+            tags$div(tags$b("Perímetro: "), paste0(poly_data$perimetro_m, " ml")),
+            tags$div(tags$b("Distrito(s): "), paste(poly_data$distritos, collapse = ", "))
+          )
+        }
+      ),
+      p(
+        class = "small text-muted mb-3",
+        style = "font-size: 0.80rem; line-height: 1.35;",
+        "La zonificación, afectaciones viales, parámetros urbanísticos y el plano oficial se encuentran en el ",
+        tags$b(style = "color: #006633;", "Reporte Informativo"), "."
+      ),
+      div(
+        class = "d-flex flex-column gap-2",
+        actionButton(
+          "btn_abrir_certificado_tab", "📋 Ver Reporte Informativo",
+          class = "btn btn-success fw-bold w-100 py-2 shadow-sm",
+          style = "background-color: #008800; border-color: #006633;",
+          icon = icon("file-invoice")
+        ),
+        if (pdf_motor_disponible()) {
+          downloadButton("btn_descargar_pdf", "📥 Descargar Constancia PDF", class = "btn btn-download-pdf w-100 py-2")
+        } else {
+          div(class = "alert alert-secondary py-2 px-3 small mb-0",
+              "La constancia informativa se consulta directamente en la pestaña Reporte Informativo.")
+        }
+      )
     )
   })
   
