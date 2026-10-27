@@ -1,11 +1,10 @@
-# Plan de Migración: De Supabase a Neon Serverless PostgreSQL
+# Estado de Migración: Neon Serverless PostgreSQL (PostGIS)
 **GeoVisor PDU Anta (2024 - 2034)**  
 **Municipalidad Provincial de Anta - GDUR**
 
-> **Fase Actual:** **TRABAJO EN LOCAL AUTÓNOMO**  
-> El sistema se encuentra configurado para operar con `PDU_DATA_SOURCE=local` (leyendo Shapefiles directamente de `data/`).  
-> Las conexiones con Supabase han sido declaradas **DEPRECADAS** y archivadas en [`deprecated/supabase/`](file:///d:/plataformas_gdur/pdu_anta_2024_2034/deprecated/supabase/).  
-> Una vez completados los ajustes en la aplicación Shiny, se activará la migración a Neon.
+> **Fase Actual:** **MIGRACIÓN A NEON COMPLETADA Y ACTIVA**  
+> Todas las capas espaciales (zonificación, vías, servidumbres, ámbito, ferrocarril) y tablas normativas han sido migradas a Neon Serverless PostgreSQL con PostGIS y optimizadas con índices espaciales GIST.  
+> Adicionalmente, se dispone del paquete de respaldo ultra-ligero en `data_pdu/` (formato RDS y GeoJSON) para despliegues independientes en Posit Connect Cloud y GitHub sin depender de shapefiles pesados.
 
 ---
 

@@ -3111,7 +3111,7 @@
         "Package": "tinytex",
         "Type": "Package",
         "Title": "Helper Functions to Install and Maintain TeX Live, and Compile\nLaTeX Documents",
-        "Version": "0.60",
+        "Version": "0.61",
         "Authors@R": "c(\n  person(\"Yihui\", \"Xie\", role = c(\"aut\", \"cre\", \"cph\"), email = \"xie@yihui.name\", comment = c(ORCID = \"0000-0003-0645-5666\")),\n  person(given = \"Posit Software, PBC\", role = c(\"cph\", \"fnd\")),\n  person(\"Christophe\", \"Dervieux\", role = \"ctb\", comment = c(ORCID = \"0000-0003-4474-2498\")),\n  person(\"Devon\", \"Ryan\", role = \"ctb\", email = \"dpryan79@gmail.com\", comment = c(ORCID = \"0000-0002-8549-0971\")),\n  person(\"Ethan\", \"Heinzen\", role = \"ctb\"),\n  person(\"Fernando\", \"Cagua\", role = \"ctb\"),\n  person()\n  )",
         "Description": "Helper functions to install and maintain the 'LaTeX' distribution\n  named 'TinyTeX' (<https://yihui.org/tinytex/>), a lightweight, cross-platform,\n  portable, and easy-to-maintain version of 'TeX Live'. This package also\n  contains helper functions to compile 'LaTeX' documents, and install missing\n  'LaTeX' packages automatically.",
         "Imports": "xfun (>= 0.48)",
@@ -3122,18 +3122,17 @@
         "Encoding": "UTF-8",
         "RoxygenNote": "7.3.3",
         "NeedsCompilation": "no",
-        "Packaged": "2026-06-15 22:44:20 UTC; yihui",
+        "Packaged": "2026-09-17 18:47:44 UTC; yihui",
         "Author": "Yihui Xie [aut, cre, cph] (ORCID:\n    <https://orcid.org/0000-0003-0645-5666>),\n  Posit Software, PBC [cph, fnd],\n  Christophe Dervieux [ctb] (ORCID:\n    <https://orcid.org/0000-0003-4474-2498>),\n  Devon Ryan [ctb] (ORCID: <https://orcid.org/0000-0002-8549-0971>),\n  Ethan Heinzen [ctb],\n  Fernando Cagua [ctb]",
         "Maintainer": "Yihui Xie <xie@yihui.name>",
         "Repository": "CRAN",
-        "Date/Publication": "2026-06-16 05:10:02 UTC",
-        "Built": "R 4.6.0; ; 2026-06-16 09:00:46 UTC; windows",
+        "Date/Publication": "2026-09-17 20:40:02 UTC",
+        "Built": "R 4.6.1; ; 2026-09-29 13:13:19 UTC; windows",
         "RemoteType": "standard",
         "RemotePkgRef": "tinytex",
         "RemoteRef": "tinytex",
-        "RemoteRepos": "https://cran.rstudio.com/",
-        "RemotePkgPlatform": "i386+x86_64-w64-mingw32",
-        "RemoteSha": "0.60"
+        "RemoteRepos": "https://cran.rstudio.com",
+        "RemoteSha.Version": "0.61"
       }
     },
     "units": {
@@ -3476,28 +3475,49 @@
   },
   "files": {
     "app.R": {
-      "checksum": "d5b47d9893ceea9e368945e8de7c7602"
+      "checksum": "b5cd65d03fa214a5c344162eeb6fa7ea"
     },
     "constancia_pdu_template.qmd": {
-      "checksum": "8fa00b0ca2ce64e1bf0a14faaab12beb"
+      "checksum": "55a60e5d5b172c4642b63c6f40051af2"
+    },
+    "data_pdu/pdu_capas.rds": {
+      "checksum": "d1234daada2b81e43135b328b52a5129"
     },
     "DESCRIPTION": {
-      "checksum": "b435fc2b4fb5883d863aacc012839967"
+      "checksum": "04727981720d1ec23b4e23af9b2bd2f6"
     },
-    "logo/ESCUDO MUNI ANTA.png": {
-      "checksum": "02050ab43ed5fa7ab89c99981fbf4521"
+    "R/estilos_territoriales.R": {
+      "checksum": "9ff383b10a94f40b556424123ed43ec5"
     },
-    "logo/pdu_actualizado_sf.png": {
-      "checksum": "83151f53d3c74ab3cef81fc6c513238b"
+    "R/local_data.R": {
+      "checksum": "189cc0ee8ae8e3ffb43f35e44b59cfc4"
+    },
+    "R/mod_catalogo_zonas.R": {
+      "checksum": "1f25261cf595b4886306808c3b6742c7"
+    },
+    "R/mod_informacion_pdu.R": {
+      "checksum": "b7bca36302b73e8fc4de4582970ef742"
+    },
+    "R/mod_privacidad.R": {
+      "checksum": "14c24720f2a7ed31778b3c0aa75d2dc6"
+    },
+    "R/neon_utils.R": {
+      "checksum": "a4dfee11a5986035f7f40021911b0661"
+    },
+    "R/reglamento_utils.R": {
+      "checksum": "b86322d1d92f7fa797b0b77b83ceb762"
+    },
+    "R/reporte_cartografico_utils.R": {
+      "checksum": "09e5d66f19b5d805c72274315a577243"
     },
     "R/spatial_utils.R": {
-      "checksum": "5b4128a03f38b835d25af6c9d24ec51e"
+      "checksum": "d8c095d964cc82851d84c2560b082a90"
     },
     "R/supabase_utils.R": {
-      "checksum": "b60ffca61bbe7e92e863b7ed6732b2a7"
+      "checksum": "cbf5fca32e258eee625ea712bb767473"
     },
     "www/custom.css": {
-      "checksum": "8699d0da1ed8a34a33fb892604ab164c"
+      "checksum": "97c2b1530c3ba76201e8739e62f58719"
     },
     "www/escudo_muni_anta.png": {
       "checksum": "02050ab43ed5fa7ab89c99981fbf4521"

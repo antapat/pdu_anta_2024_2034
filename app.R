@@ -33,6 +33,7 @@ if (requireNamespace("pagedown", quietly = TRUE)) {
 
 options(shiny.maxRequestSize = 25 * 1024^2)
 source("R/spatial_utils.R", local = TRUE)
+if (file.exists("R/neon_utils.R")) source("R/neon_utils.R", local = TRUE)
 source("R/estilos_territoriales.R", local = TRUE)
 source("R/supabase_utils.R", local = TRUE)
 source("R/reglamento_utils.R", local = TRUE, encoding = "UTF-8")
@@ -2254,8 +2255,14 @@ server <- function(input, output, session) {
   output$ui_card_estado_supabase <- renderUI({
     info <- estado_supa()
     es_local <- isTRUE(info$es_local) || info$modo %in% c("local", "offline")
-    modo_txt <- if (es_local) {
-      "Archivos Shapefiles locales (data/)"
+    modo_txt <- if (info$modo == "neon") {
+      "Neon Serverless PostgreSQL (PostGIS 3.4+)"
+    } else if (es_local) {
+      if (file.exists("data_pdu/pdu_capas.rds") && !file.exists("data/P_080301_Zonificacion_urbana.shp")) {
+        "Datos Optimizados Cloud (data_pdu/pdu_capas.rds)"
+      } else {
+        "Archivos Shapefiles locales (data/)"
+      }
     } else if (info$modo == "postgres") {
       "PostgreSQL Directo (Supabase - Deprecado)"
     } else if (info$modo == "rest") {
@@ -2268,7 +2275,9 @@ server <- function(input, output, session) {
       div(
         class = "d-flex justify-content-between align-items-center py-1 border-bottom",
         span(class = "text-muted small", "Entorno de Datos:"),
-        if (es_local) {
+        if (info$modo == "neon") {
+          span(class = "badge bg-success", "🚀 Neon PostGIS Cloud")
+        } else if (es_local) {
           span(class = "badge bg-primary", "💻 Local Activo")
         } else if (isTRUE(info$conectado)) {
           span(class = "badge bg-warning text-dark", "⚠️ Cloud Deprecado")

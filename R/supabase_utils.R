@@ -48,6 +48,9 @@ supabase_public_api_key <- function() {
 #' @deprecated La fuente oficial por defecto es "local".
 supabase_detect_mode <- function() {
   fuente <- tolower(Sys.getenv("PDU_DATA_SOURCE", "local"))
+  if (fuente == "neon" || nzchar(Sys.getenv("DATABASE_URL")) || nzchar(Sys.getenv("NEON_HOST"))) {
+    return("neon")
+  }
   if (fuente == "local") return("local")
   
   host <- Sys.getenv("SUPABASE_HOST", "")
@@ -305,6 +308,21 @@ supabase_ping <- function() {
   
   t0 <- Sys.time()
   
+  if (modo == "neon") {
+    if (file.exists("R/neon_utils.R")) source("R/neon_utils.R", local = TRUE)
+    ok <- tryCatch(neon_disponible(), error = function(e) FALSE)
+    latencia <- as.numeric(difftime(Sys.time(), t0, units = "secs")) * 1000
+    if (isTRUE(ok)) {
+      return(list(
+        conectado = TRUE,
+        es_local = FALSE,
+        modo = "neon",
+        mensaje = "Conectado a Neon Serverless PostgreSQL (PostGIS)",
+        latencia_ms = round(latencia, 1)
+      ))
+    }
+  }
+  
   if (modo == "postgres") {
     con <- supabase_conectar_pg()
     if (!is.null(con)) {
@@ -387,7 +405,17 @@ supabase_registrar_consulta <- function(tipo_consulta,
   
   meta_str <- tryCatch(jsonlite::toJSON(detalle_json, auto_unbox = TRUE), error = function(e) "{}")
   
-  # 1. Vía Postgres
+  # 0. Vía Neon Serverless PostgreSQL
+  if (modo == "neon") {
+    if (file.exists("R/neon_utils.R")) source("R/neon_utils.R", local = TRUE)
+    res <- tryCatch(
+      neon_registrar_consulta(tipo_consulta, coordenadas_texto, distrito, en_ambito, zona_principal, detalle_json),
+      error = function(e) FALSE
+    )
+    return(invisible(res))
+  }
+  
+  # 1. Vía Postgres (Legado Supabase)
   if (modo == "postgres") {
     con <- supabase_conectar_pg()
     if (!is.null(con)) {
@@ -488,6 +516,19 @@ supabase_normalizar_metricas <- function(x) {
 
 supabase_rpc_metricas <- function(funcion, payload = NULL) {
   modo <- supabase_detect_mode()
+  
+  if (modo == "neon") {
+    if (file.exists("R/neon_utils.R")) source("R/neon_utils.R", local = TRUE)
+    tryCatch({
+      if (identical(funcion, "registrar_visita")) {
+        neon_registrar_visita(payload$p_visitante)
+      } else if (identical(funcion, "registrar_constancia")) {
+        neon_registrar_constancia(payload$codigo %||% "CONSTANCIA")
+      }
+      return(neon_obtener_metricas())
+    }, error = function(e) NULL)
+  }
+  
   if (modo %in% c("offline", "local")) return(.local_metricas_leer())
 
   if (modo == "postgres") {
