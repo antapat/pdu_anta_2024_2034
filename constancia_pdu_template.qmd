@@ -131,7 +131,25 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
 )
 
 #v(2pt)
-#text(fill: rgb("#006633"), weight: "bold", size: 8pt)[RESUMEN DE IDENTIFICACIÓN CARTOGRÁFICA]
+#text(fill: rgb("#006633"), weight: "bold", size: 8pt)[PLANO DE UBICACIÓN Y ZONIFICACIÓN DEL PREDIO (LÁMINA CARTOGRÁFICA OFICIAL)]
+#v(-3pt)
+#line(length: 100%, stroke: 0.8pt + rgb("#98C838"))
+#v(1pt)
+```
+
+```{r}
+#| results: 'asis'
+if (nzchar(dat$mapa_path) && file.exists(dat$mapa_path)) {
+  rel_path <- gsub("^\\./", "", dat$mapa_path)
+  cat(sprintf("![](%s){fig-align='center' width=100%%}\n\n", rel_path))
+}
+```
+
+```{=typst}
+#pagebreak()
+
+#v(-4pt)
+#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[1. RESUMEN DE IDENTIFICACIÓN CARTOGRÁFICA]
 #v(-3pt)
 #line(length: 100%, stroke: 0.8pt + rgb("#98C838"))
 #v(1pt)
@@ -157,29 +175,11 @@ if (isTRUE(dat$es_poligono)) {
 ```
 
 ```{=typst}
-#v(-2pt)
-#text(fill: rgb("#006633"), weight: "bold", size: 8pt)[PLANO DE UBICACIÓN Y ZONIFICACIÓN DEL PREDIO (LÁMINA CARTOGRÁFICA OFICIAL)]
+#v(1.5pt)
+#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[2. DESGLOSE DE ZONIFICACIÓN Y USOS DE SUELO EN EL PREDIO]
 #v(-3pt)
 #line(length: 100%, stroke: 0.8pt + rgb("#98C838"))
-#v(1pt)
-```
-
-```{r}
-#| results: 'asis'
-if (nzchar(dat$mapa_path) && file.exists(dat$mapa_path)) {
-  rel_path <- gsub("^\\./", "", dat$mapa_path)
-  cat(sprintf("![](%s){fig-align='center' width=100%%}\n\n", rel_path))
-}
-```
-
-```{=typst}
-#pagebreak()
-
-#v(-4pt)
-#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[1. DESGLOSE DE ZONIFICACIÓN Y USOS DE SUELO EN EL PREDIO]
-#v(-3pt)
-#line(length: 100%, stroke: 0.8pt + rgb("#98C838"))
-#v(2pt)
+#v(1.5pt)
 ```
 
 ```{r}
@@ -200,11 +200,11 @@ if (!is.null(tz) && is.data.frame(tz) && nrow(tz) > 0) {
 ```
 
 ```{=typst}
-#v(2pt)
-#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[2. SISTEMA VIAL PROPUESTO Y SECCIÓN VIAL (SV)]
+#v(1.5pt)
+#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[3. SISTEMA VIAL PROPUESTO Y SECCIÓN VIAL (SV)]
 #v(-3pt)
 #line(length: 100%, stroke: 0.8pt + rgb("#98C838"))
-#v(2pt)
+#v(1.5pt)
 ```
 
 ```{r}
@@ -237,11 +237,11 @@ if (!is.null(tv) && is.data.frame(tv) && nrow(tv) > 0) {
   ]
 )
 
-#v(2pt)
-#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[3. CONDICIONANTES Y AFECTACIONES DE INFRAESTRUCTURA]
+#v(1.5pt)
+#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[4. CONDICIONANTES Y AFECTACIONES DE INFRAESTRUCTURA]
 #v(-3pt)
 #line(length: 100%, stroke: 0.8pt + rgb("#98C838"))
-#v(2pt)
+#v(1.5pt)
 ```
 
 ```{r}
@@ -264,11 +264,11 @@ cat("\n")
 ```
 
 ```{=typst}
-#v(2pt)
-#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[4. PARÁMETROS URBANÍSTICOS Y EDIFICATORIOS NORMATIVOS]
+#v(1.5pt)
+#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[5. PARÁMETROS URBANÍSTICOS Y EDIFICATORIOS NORMATIVOS]
 #v(-3pt)
 #line(length: 100%, stroke: 0.8pt + rgb("#98C838"))
-#v(2pt)
+#v(1.5pt)
 ```
 
 ```{r}

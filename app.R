@@ -1829,24 +1829,6 @@ server <- function(input, output, session) {
                   class = "legal-notice-box",
                   icon("circle-info"), " ", tags$b("Carácter del Documento: "), CARACTER_INFORMATIVO
                 ),
-                # Resumen compacto de identificación del predio en cabecera de plano
-                tags$table(
-                  class = "table-cert table-compact mb-2",
-                  tags$tbody(
-                    tags$tr(
-                      tags$th(style = "width:20%;", "Área del Predio:"),
-                      tags$td(tags$b(paste0(poly_data$area_m2, " m² (", poly_data$area_has, " ha)"))),
-                      tags$th(style = "width:20%;", "Perímetro Total:"),
-                      tags$td(paste0(poly_data$perimetro_m, " ml"))
-                    ),
-                    tags$tr(
-                      tags$th("Distrito(s):"),
-                      tags$td(paste(poly_data$distritos, collapse = ", ")),
-                      tags$th("Ámbito PDU Anta:"),
-                      tags$td(if (!ambito_disponible) "No disponible" else paste0(poly_data$pct_en_ambito, "% en ámbito"))
-                    )
-                  )
-                ),
                 if (!is.null(mapa_img_uri)) {
                   tagList(
                     tags$div(class = "section-heading", "PLANO DE UBICACIÓN Y ZONIFICACIÓN DEL PREDIO (PÁGINA COMPLETA)"),
