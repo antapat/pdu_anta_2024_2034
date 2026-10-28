@@ -251,6 +251,70 @@ ui <- page_navbar(
         inicializarConsentimientoPDU();
       });
     ")),
+    tags$script(HTML("
+      // ======================================================================
+      // CONTROL DE TIEMPO Y MODAL AMIGABLE DE DESCONEXIÓN (ETAPA 1)
+      // ======================================================================
+      function mostrarModalDesconexionPDU(mensajeCustom) {
+        var defaultOverlay = document.getElementById('shiny-disconnected-overlay');
+        if (defaultOverlay) {
+          defaultOverlay.style.display = 'none';
+        }
+
+        var existingBackdrop = document.getElementById('pdu-timeout-backdrop');
+        if (existingBackdrop) {
+          if (mensajeCustom) {
+            var msgElem = existingBackdrop.querySelector('.pdu-timeout-custom-msg');
+            if (msgElem) msgElem.textContent = mensajeCustom;
+          }
+          existingBackdrop.classList.add('active');
+          return;
+        }
+
+        var backdrop = document.createElement('div');
+        backdrop.id = 'pdu-timeout-backdrop';
+        backdrop.className = 'pdu-timeout-backdrop active';
+        backdrop.innerHTML = `
+          <div class=\"pdu-timeout-modal-card\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"pdu-timeout-title\">
+            <div class=\"pdu-timeout-header\">
+              <div class=\"pdu-timeout-icon-circle\">
+                <i class=\"fa fa-clock\"></i>
+              </div>
+              <h3 id=\"pdu-timeout-title\" class=\"pdu-timeout-title\">Sesión de Consulta Finalizada</h3>
+              <p class=\"pdu-timeout-subtitle\">Municipalidad Provincial de Anta • PDU 2024 - 2034</p>
+            </div>
+            <div class=\"pdu-timeout-body\">
+              <p class=\"pdu-timeout-custom-msg mb-2\">
+                Su sesión de consulta de <strong>5 minutos</strong> ha culminado con el fin de optimizar los recursos del servidor y garantizar un acceso fluido para toda la ciudadanía.
+              </p>
+              <div class=\"pdu-timeout-callout\">
+                <i class=\"fa fa-circle-info text-success me-1\"></i>
+                Si requiere continuar consultando información territorial, zonificación o generar constancias técnicas, puede iniciar una nueva sesión inmediatamente.
+              </div>
+            </div>
+            <div class=\"pdu-timeout-footer\">
+              <button type=\"button\" class=\"btn-pdu-reconnect\" onclick=\"window.location.reload();\">
+                <i class=\"fa fa-rotate-right\"></i> Iniciar Nueva Consulta
+              </button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(backdrop);
+      }
+
+      // Escuchar eventos de desconexión o expiración de Shiny
+      $(document).on('shiny:connected', function() {
+        if (window.Shiny && Shiny.addCustomMessageHandler) {
+          Shiny.addCustomMessageHandler('pdu_session_expired', function(data) {
+            mostrarModalDesconexionPDU(data && data.mensaje ? data.mensaje : null);
+          });
+        }
+      });
+
+      $(document).on('shiny:disconnected', function(event) {
+        mostrarModalDesconexionPDU();
+      });
+    ")),
     tags$style(HTML("
       .leaflet-container { height: calc(100vh - 78px) !important; width: 100% !important; }
       @media (max-width: 767.98px) {
@@ -336,7 +400,7 @@ ui <- page_navbar(
             div(class = "mt-3"),
             
             p(class = "small text-muted mb-2",
-              "Pegue las coordenadas de los vértices del predio o suba un archivo (CSV / GeoJSON) para calcular la zonificación, afectación vial y servidumbres."
+              "Ingrese los vértices del predio o cargue un archivo para consultar la zonificación, las vías y las servidumbres."
             ),
             
             radioButtons(
@@ -358,7 +422,7 @@ ui <- page_navbar(
               multiple = TRUE,
               accept = c(".zip", ".shp", ".dbf", ".shx", ".prj", ".cpg", ".geojson", ".json", ".kml", ".csv", ".txt"),
               buttonLabel = "Examinar...",
-              placeholder = "Seleccione .zip, .shp o GeoJSON"
+              placeholder = "Seleccione un archivo del predio"
             ),
             
             actionButton(
@@ -421,6 +485,7 @@ ui <- page_navbar(
   nav_item(
     div(
       class = "d-flex align-items-center gap-2 me-1",
+      uiOutput("ui_temporizador_sesion", inline = TRUE),
       uiOutput("ui_metricas_publicas", inline = TRUE),
       div(
         class = "brand-logo-right d-none d-xl-flex",
@@ -434,6 +499,95 @@ ui <- page_navbar(
 # 2. LÓGICA DEL SERVIDOR (SERVER)
 # ------------------------------------------------------------------------------
 server <- function(input, output, session) {
+  
+  # ============================================================================
+  # CONTROL DE TIEMPO DE CONSULTA (ETAPA 1 - GUÍA PDU ANTA)
+  # Duración fija de 300 segundos (5 minutos) por sesión con desconexión activa
+  # ============================================================================
+  session$allowReconnect(FALSE)
+  
+  DURACION_SESION_SEG <- 300L
+  tiempo_inicio_sesion <- Sys.time()
+  tiempo_limite_sesion <- tiempo_inicio_sesion + DURACION_SESION_SEG
+  
+  sesion_cerrada <- FALSE
+  aviso_1min_mostrado <- FALSE
+  restante_seg <- reactiveVal(DURACION_SESION_SEG)
+  
+  cerrar_sesion_pdu <- function(motivo = "tiempo_agotado") {
+    if (sesion_cerrada) return(invisible(NULL))
+    sesion_cerrada <<- TRUE
+    tryCatch({
+      session$sendCustomMessage("pdu_session_expired", list(
+        motivo = motivo,
+        mensaje = "Su tiempo de consulta de 5 minutos ha finalizado."
+      ))
+    }, error = function(e) NULL)
+    session$close()
+  }
+  
+  sesion_vigente <- function() {
+    !sesion_cerrada && as.numeric(difftime(tiempo_limite_sesion, Sys.time(), units = "secs")) > 0
+  }
+  
+  observe({
+    invalidateLater(1000, session)
+    if (sesion_cerrada) return()
+    
+    n_seg <- max(0L, ceiling(as.numeric(difftime(tiempo_limite_sesion, Sys.time(), units = "secs"))))
+    restante_seg(n_seg)
+    
+    if (n_seg <= 0L) {
+      cerrar_sesion_pdu("tiempo_agotado")
+    } else if (n_seg <= 60L && !aviso_1min_mostrado) {
+      aviso_1min_mostrado <<- TRUE
+      showNotification(
+        tagList(
+          tags$div(
+            class = "d-flex align-items-center gap-2",
+            icon("clock", class = "text-warning fs-5"),
+            tags$strong("Queda 1 minuto de consulta")
+          ),
+          tags$p(
+            class = "mb-0 mt-1",
+            "Le recomendamos descargar su constancia técnica o informe cartográfico antes del vencimiento."
+          )
+        ),
+        duration = 12,
+        type = "warning",
+        id = "notif_aviso_tiempo_pdu"
+      )
+    }
+  }, priority = 100)
+  
+  output$ui_temporizador_sesion <- renderUI({
+    seg <- restante_seg()
+    if (is.null(seg)) return(NULL)
+    
+    minutos <- seg %/% 60L
+    segundos <- seg %% 60L
+    tiempo_formateado <- sprintf("%02d:%02d", minutos, segundos)
+    
+    es_critico <- seg <= 30L
+    es_aviso <- seg <= 60L
+    
+    clase_estado <- if (es_critico) {
+      "timer-chip-danger"
+    } else if (es_aviso) {
+      "timer-chip-warning"
+    } else {
+      "timer-chip-normal"
+    }
+    
+    span(
+      id = "pdu_timer_chip",
+      class = paste("timer-chip-pdu", clase_estado),
+      title = paste0("Tiempo restante de consulta: ", tiempo_formateado, " min (Límite: 5 minutos)"),
+      icon(if (es_aviso) "triangle-exclamation" else "clock"),
+      span(class = "timer-label d-none d-sm-inline", "Consulta:"),
+      span(class = "timer-digits", tiempo_formateado)
+    )
+  })
   
   # Estado reactivo: Modo activo ("punto" o "poligono")
   modo_activo <- reactiveVal("punto")
@@ -593,9 +747,9 @@ server <- function(input, output, session) {
         group = "Zonificación PDU",
         fillColor = ~COLOR_MAPA,
         fillOpacity = 0.60,
-        color = "#52635B",
-        opacity = 0.72,
-        weight = 0.55,
+        color = ~COLOR_MAPA,
+        opacity = 0.88,
+        weight = 0.8,
         label = ~paste0(COD_S_ZONA, ": ", NOMBRE_COMPLETO),
         popup = ~POPUP_MAPA,
         highlightOptions = highlightOptions(
@@ -799,6 +953,10 @@ server <- function(input, output, session) {
   
   # Clic en el mapa
   observeEvent(input$mapa_pdu_click, {
+    if (!sesion_vigente()) {
+      cerrar_sesion_pdu("tiempo_agotado")
+      return()
+    }
     click <- input$mapa_pdu_click
     req(click$lng, click$lat)
     tryCatch(fijar_punto_consulta(click$lng, click$lat), error = function(e) {
@@ -1181,7 +1339,7 @@ server <- function(input, output, session) {
                if (modo == "punto") "Punto Consultado" else "Polígono Consultado")
       ),
       div(
-        class = "small text-muted mb-2",
+        class = "small text-muted mb-0",
         if (modo == "punto") {
           tagList(
             tags$div(tags$b("Coordenadas UTM 18S: "), paste0("E: ", round(pt_data$este, 2), " m | N: ", round(pt_data$norte, 2), " m")),
@@ -1198,25 +1356,10 @@ server <- function(input, output, session) {
         }
       ),
       p(
-        class = "small text-muted mb-3",
+        class = "small text-muted mt-2 mb-0",
         style = "font-size: 0.80rem; line-height: 1.35;",
-        "La zonificación, afectaciones viales, parámetros urbanísticos y el plano oficial se encuentran en el ",
+        "La zonificación, afectaciones viales, parámetros urbanísticos y el plano oficial se encuentran en la pestaña ",
         tags$b(style = "color: #006633;", "Reporte Informativo"), "."
-      ),
-      div(
-        class = "d-flex flex-column gap-2",
-        actionButton(
-          "btn_abrir_certificado_tab", "📋 Ver Reporte Informativo",
-          class = "btn btn-success fw-bold w-100 py-2 shadow-sm",
-          style = "background-color: #008800; border-color: #006633;",
-          icon = icon("file-invoice")
-        ),
-        if (pdf_motor_disponible()) {
-          downloadButton("btn_descargar_pdf", "📥 Descargar Constancia PDF", class = "btn btn-download-pdf w-100 py-2")
-        } else {
-          div(class = "alert alert-secondary py-2 px-3 small mb-0",
-              "La constancia informativa se consulta directamente en la pestaña Reporte Informativo.")
-        }
       )
     )
   })
@@ -1362,6 +1505,10 @@ server <- function(input, output, session) {
         .cert-card { width: 100% !important; max-width: 100% !important; margin: 0; padding: 0; }
         .cert-page { height: 284mm !important; max-height: 284mm !important; min-height: 284mm !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; page-break-after: always !important; page-break-inside: avoid !important; overflow: hidden !important; }
         .cert-page:last-child { page-break-after: auto !important; }
+        .cert-page-body { flex-grow: 1; display: flex; flex-direction: column; }
+        .cert-page-technical { height: auto !important; max-height: none !important; min-height: 284mm !important; page-break-inside: auto !important; overflow: visible !important; }
+        .cert-page-technical .cert-page-body { flex: 1 0 auto !important; }
+        .cert-page-technical .cert-footer { margin-top: auto; padding-bottom: 3px; }
         .page-break { display: none !important; }
         .mapa-img-fullpage { width: 100% !important; max-height: 228mm !important; }
       }
@@ -1384,6 +1531,7 @@ server <- function(input, output, session) {
     "
     
     fecha_consulta_str <- format(Sys.time(), "%d/%m/%Y a las %H:%M horas")
+    codigo_consulta <- paste0("PDU-ANTA-", format(Sys.time(), "%Y%m%d%H%M"))
     
     # Encabezado institucional oficial para Página 1
     header_banner_p1 <- div(
@@ -1399,7 +1547,7 @@ server <- function(input, output, session) {
             style = "vertical-align:middle; padding-left:12px; border:none;",
             tags$div(class = "header-title", "MUNICIPALIDAD PROVINCIAL DE ANTA"),
             tags$div(class = "header-subtitle", if (modo == "punto") "REPORTE INFORMATIVO — PDU ANTA 2024 - 2034" else "REPORTE INFORMATIVO DE PARÁMETROS URBANÍSTICOS Y ZONIFICACIÓN"),
-            tags$div(class = "header-meta", paste("Consulta generada el:", fecha_consulta_str, "| Gerencia de Desarrollo Urbano y Rural"))
+            tags$div(class = "header-meta", paste("Consulta:", codigo_consulta, "|", fecha_consulta_str, "| Gerencia de Desarrollo Urbano y Rural"))
           ),
           tags$td(
             style = "width:75px; text-align:right; vertical-align:middle; border:none; padding:0;",
@@ -1423,7 +1571,7 @@ server <- function(input, output, session) {
             style = "vertical-align:middle; padding-left:12px; border:none;",
             tags$div(class = "header-title", style = "font-size: 1.02rem;", "MUNICIPALIDAD PROVINCIAL DE ANTA"),
             tags$div(class = "header-subtitle", style = "font-size: 0.80rem;", if (modo == "punto") "REPORTE INFORMATIVO — FICHA TÉCNICA Y PARÁMETROS URBANÍSTICOS" else "REPORTE INFORMATIVO — FICHA TÉCNICA NORMATIVA DE PREDIO"),
-            tags$div(class = "header-meta", style = "font-size: 0.68rem;", paste("PDU Anta 2024 - 2034 • Consulta:", fecha_consulta_str, "• Gerencia de Desarrollo Urbano y Rural"))
+            tags$div(class = "header-meta", style = "font-size: 0.68rem;", paste("PDU Anta 2024 - 2034 • Consulta:", codigo_consulta, "•", fecha_consulta_str, "• Gerencia de Desarrollo Urbano y Rural"))
           ),
           tags$td(
             style = "width:65px; text-align:right; vertical-align:middle; border:none; padding:0;",
@@ -1511,10 +1659,6 @@ server <- function(input, output, session) {
                 class = "cert-page-body",
                 header_banner_p1,
                 div(
-                  class = "project-box",
-                  tags$b("Instrumento de Gestión: "), tags$span(INSTRUMENTO_GESTION_OFICIAL)
-                ),
-                div(
                   class = "legal-notice-box",
                   icon("circle-info"), " ", tags$b("Carácter del Documento: "), CARACTER_INFORMATIVO
                 ),
@@ -1530,7 +1674,7 @@ server <- function(input, output, session) {
             
             # --- PÁGINA 2: DATOS Y PARÁMETROS NORMATIVOS ---
             div(
-              class = "cert-page",
+              class = "cert-page cert-page-technical",
               div(
                 class = "cert-page-body",
                 header_banner_p2,
@@ -1544,8 +1688,17 @@ server <- function(input, output, session) {
                     tags$tr(tags$th("Coordenadas WGS84:"), tags$td(paste0("Lat: ", round(pt_data$lat, 4), "° | Lng: ", round(pt_data$lng, 4), "°")))
                   )
                 ),
-                
-                tags$div(class = "section-heading", "2. SISTEMA VIAL PROPUESTO Y SECCIÓN VIAL (SV)"),
+                tags$div(class = "section-heading", "2. RESUMEN DE IDENTIFICACIÓN CARTOGRÁFICA"),
+                tags$table(
+                  class = "table-cert table-compact mb-2",
+                  tags$tbody(
+                    tags$tr(tags$th("Tipo de consulta:"), tags$td("Punto geográfico")),
+                    tags$tr(tags$th("Zona PDU:"), tags$td(if (!is.na(cod_zona)) cod_zona else "Sin zonificación asignada")),
+                    tags$tr(tags$th("Subzona / descripción:"), tags$td(if (!is.na(cod_s_zona)) paste(cod_s_zona, "—", sub_zona) else "No identificada")),
+                    tags$tr(tags$th("Ámbito PDU Anta:"), tags$td(if (!ambito_disponible) "No disponible" else if (en_ambito) "Dentro del ámbito reglamentado" else "Fuera del ámbito reglamentado"))
+                  )
+                ),
+                tags$div(class = "section-heading", "3. SISTEMA VIAL PROPUESTO Y SECCIÓN VIAL (SV)"),
                 tags$table(
                   class = "table-cert mb-1",
                   tags$thead(
@@ -1565,7 +1718,7 @@ server <- function(input, output, session) {
                   "Nota Metodológica: Las vías del Sistema Vial Propuesto mostradas corresponden a los ejes normativos identificados dentro de un área de influencia directa (buffer de 25 metros) respecto al punto o predio consultado."
                 ),
                 
-                tags$div(class = "section-heading", "3. ZONIFICACIÓN Y PARÁMETROS URBANÍSTICOS"),
+                tags$div(class = "section-heading", "4. ZONIFICACIÓN Y PARÁMETROS URBANÍSTICOS"),
                 tags$table(
                   class = "table-cert mb-2",
                   tags$tbody(
@@ -1583,10 +1736,11 @@ server <- function(input, output, session) {
                 ),
                 
                 if (length(unique(capas$zonificacion$COD_S_ZONA[idx_zonif_punto])) > 1) tagList(
+                  tags$div(class = "section-heading", "OTRAS SUBZONAS INTERSECTADAS"),
                   div(class = "alert alert-warning", "El punto intersecta varias subzonas. Verifique el límite cartográfico; se incluyen todas las fichas aplicables."),
                   lapply(pdu_buscar_parametros(df_parametros, setdiff(capas$zonificacion$COD_S_ZONA[idx_zonif_punto], cod_s_zona)), pdu_tabla_parametros)
                 ),
-                tags$div(class = "section-heading", "4. AFECTACIONES DE INFRAESTRUCTURA"),
+                tags$div(class = "section-heading", "5. AFECTACIONES DE INFRAESTRUCTURA"),
                 tags$ul(
                   class = "cert-list",
                   tags$li(if (en_serv_at) tags$b(class = "text-danger", "⚠️ AFECTACIÓN POR FAJA DE SERVIDUMBRE DE ALTA TENSIÓN (CNE). Prohibida edificación.") else "✓ Sin afectación por fajas de alta tensión."),
@@ -1621,10 +1775,6 @@ server <- function(input, output, session) {
               div(
                 class = "cert-page-body",
                 header_banner_p1,
-                div(
-                  class = "project-box",
-                  tags$b("Instrumento de Gestión: "), tags$span(INSTRUMENTO_GESTION_OFICIAL)
-                ),
                 div(
                   class = "legal-notice-box",
                   icon("circle-info"), " ", tags$b("Carácter del Documento: "), CARACTER_INFORMATIVO
@@ -1761,6 +1911,7 @@ server <- function(input, output, session) {
     if (modo == "poligono" && is.null(poligono_actual())) stop("No hay datos de consulta por predio activa.")
     
     dir.create("outputs", showWarnings = FALSE)
+    codigo_consulta <- paste0("PDU-ANTA-", format(Sys.time(), "%Y%m%d%H%M"))
     temp_id <- paste0("constancia_", format(Sys.time(), "%Y%m%d_%H%M%S"), "_", sample(1000:9999, 1))
     mapa_png_rel <- file.path("outputs", paste0("mapa_", temp_id, ".png"))
     on.exit({
@@ -1805,9 +1956,13 @@ server <- function(input, output, session) {
         cod_zona <- cod_s_zona <- sub_zona <- NA_character_
       }
       
-      lista_parametros <- pdu_buscar_parametros(
-        df_parametros, capas$zonificacion$COD_S_ZONA[idx_zonif_punto]
-      )
+      sz_intersectadas <- capas$zonificacion$COD_S_ZONA[idx_zonif_punto]
+      sz_validas <- intersect(unique(sz_intersectadas), df_parametros$COD_S_ZONA)
+      lista_parametros <- if (length(sz_validas) > 0) {
+        pdu_buscar_parametros(df_parametros, sz_validas)
+      } else {
+        list()
+      }
       
       tabla_zonif <- data.frame()
       if (!is.na(cod_zona)) {
@@ -1824,7 +1979,7 @@ server <- function(input, output, session) {
       generar_mapa_certificado(pt_sf, es_poligono = FALSE, ruta_salida_png = mapa_png_rel, capas_pdu = capas, pal_subzonas = colores_subzonas, ancho_in = 7.6, alto_in = 8.85)
       
       payload <- list(
-        codigo_consulta = paste0("PDU-ANTA-", format(Sys.time(), "%Y%m%d%H%M")),
+        codigo_consulta = codigo_consulta,
         fecha_hora = format(Sys.time(), "%d/%m/%Y %H:%M"),
         distrito = distrito_nombre,
         ambito_pdu = if (!ambito_disponible) "Ámbito no disponible en datos locales" else if (en_ambito) "SÍ (Dentro del Ámbito PDU Anta)" else "NO (Fuera de Ámbito)",
@@ -1850,7 +2005,7 @@ server <- function(input, output, session) {
       generar_mapa_certificado(poly_data$poly_4326, es_poligono = TRUE, ruta_salida_png = mapa_png_rel, capas_pdu = capas, pal_subzonas = colores_subzonas, ancho_in = 7.6, alto_in = 8.35)
       
       payload <- list(
-        codigo_consulta = paste0("PDU-ANTA-", format(Sys.time(), "%Y%m%d%H%M")),
+        codigo_consulta = codigo_consulta,
         fecha_hora = format(Sys.time(), "%d/%m/%Y %H:%M"),
         distrito = paste(poly_data$distritos, collapse = ", "),
         ambito_pdu = if (!ambito_disponible) "No disponible" else paste0(poly_data$pct_en_ambito, "% dentro del ámbito PDU"),
@@ -1872,59 +2027,92 @@ server <- function(input, output, session) {
       )
     }
     
-    # 1. Renderizado principal con Quarto + Typst
+    # 1. Renderizado principal con Quarto + Typst. Renderizar en un directorio
+    # temporal propio evita depender del directorio de trabajo del servidor y
+    # evita colisiones entre descargas simultáneas de distintas sesiones.
     if (quarto_disponible()) {
-      temp_rds <- tempfile(fileext = ".rds")
-      temp_pdf_out <- tempfile(fileext = ".pdf")
-      on.exit({
-        if (file.exists(temp_rds)) unlink(temp_rds)
-        if (file.exists(temp_pdf_out)) unlink(temp_pdf_out)
-      }, add = TRUE)
-      
+      qmd_path <- normalizePath("constancia_pdu_template.qmd", winslash = "/", mustWork = TRUE)
+      render_dir <- tempfile("constancia_quarto_")
+      dir.create(render_dir, recursive = TRUE, showWarnings = FALSE)
+      render_dir <- normalizePath(render_dir, winslash = "/", mustWork = TRUE)
+      render_qmd <- file.path(render_dir, "constancia_pdu_template.qmd")
+      temp_rds <- file.path(render_dir, "payload.rds")
+      temp_pdf_out <- file.path(render_dir, "constancia.pdf")
+      temp_pdf_name <- basename(temp_pdf_out)
+      on.exit(unlink(render_dir, recursive = TRUE, force = TRUE), add = TRUE)
+
+      if (!file.copy(qmd_path, render_qmd, overwrite = TRUE)) {
+        stop("No se pudo preparar la plantilla temporal para generar la constancia.")
+      }
+      # La plantilla carga el mapa, los logotipos y funciones de R mediante rutas relativas.
+      for (recurso in c("outputs", "www", "logo", "R")) {
+        if (dir.exists(recurso)) {
+          file.copy(recurso, render_dir, recursive = TRUE, copy.mode = FALSE)
+        }
+      }
       saveRDS(payload, temp_rds)
-      
-      render_ok <- FALSE
-      
+
+      render_error <- NULL
+
       # Opción A: A través del paquete R quarto
       if (requireNamespace("quarto", quietly = TRUE)) {
         tryCatch({
           quarto::quarto_render(
-            input = "constancia_pdu_template.qmd",
-            output_file = basename(temp_pdf_out),
-            execute_params = list(data_rds = temp_rds),
+            input = render_qmd,
+            output_file = temp_pdf_name,
+            execute_params = list(data_rds = basename(temp_rds)),
             output_format = "typst",
             quiet = TRUE
           )
-          render_ok <- TRUE
         }, error = function(e) {
-          render_ok <- FALSE
+          render_error <<- conditionMessage(e)
         })
       }
-      
-      # Opción B: A través del CLI directo de Quarto del sistema
-      if (!render_ok && nzchar(Sys.which("quarto"))) {
-        tryCatch({
+
+      # Opción B: CLI directo. El código de salida debe ser cero; system2
+      # devuelve el estado del proceso cuando se captura la salida.
+      pdf_valido <- function(path) {
+        if (!file.exists(path)) return(FALSE)
+        info <- file.info(path)
+        if (is.na(info$size) || info$size <= 100) return(FALSE)
+        con <- file(path, open = "rb")
+        on.exit(close(con), add = TRUE)
+        identical(readBin(con, what = "raw", n = 5L), charToRaw("%PDF-"))
+      }
+
+      if (!pdf_valido(temp_pdf_out) && nzchar(Sys.which("quarto"))) {
+        cli_output <- tryCatch(
           system2(
             "quarto",
             args = c(
-              "render", "constancia_pdu_template.qmd",
+              "render", render_qmd,
               "--to", "typst",
-              "--output", basename(temp_pdf_out),
-              "-P", paste0("data_rds:", temp_rds)
+              "--output", temp_pdf_name,
+              "--output-dir", ".",
+              "--execute-dir", ".",
+              "-P", paste0("data_rds:", basename(temp_rds))
             ),
-            stdout = FALSE, stderr = FALSE
-          )
-        }, error = function(e) NULL)
+            stdout = TRUE, stderr = TRUE
+          ),
+          error = function(e) {
+            render_error <<- conditionMessage(e)
+            structure(character(), status = 1L)
+          }
+        )
+        cli_status <- attr(cli_output, "status")
+        if (is.null(cli_status)) cli_status <- 0L
+        if (cli_status != 0L) {
+          render_error <- paste(tail(cli_output, 8L), collapse = "\n")
+        }
       }
-      
-      generado <- file.path(dirname("constancia_pdu_template.qmd"), basename(temp_pdf_out))
-      if (!file.exists(generado) && file.exists(temp_pdf_out)) generado <- temp_pdf_out
-      
-      if (file.exists(generado) && file.info(generado)$size > 100) {
-        file.copy(generado, destino_file, overwrite = TRUE)
-        unlink(generado)
+
+      if (pdf_valido(temp_pdf_out) && file.copy(temp_pdf_out, destino_file, overwrite = TRUE) && pdf_valido(destino_file)) {
         return(invisible(destino_file))
       }
+      if (is.null(render_error)) {
+        render_error <- "Quarto no produjo un archivo PDF válido en la ruta esperada."
+      }
+      message("No se pudo generar la constancia con Quarto: ", render_error)
     }
     
     # 2. Fallback con Chrome / pagedown si Quarto no estuviera instalado
@@ -1933,12 +2121,22 @@ server <- function(input, output, session) {
       on.exit(unlink(temp_html), add = TRUE)
       doc_html <- generar_html_certificado()
       save_html(doc_html, file = temp_html)
-      pagedown::chrome_print(
-        input = temp_html,
-        output = destino_file,
-        extra_args = c("--no-sandbox", "--disable-gpu", "--allow-file-access-from-files")
+      tryCatch(
+        pagedown::chrome_print(
+          input = temp_html,
+          output = destino_file,
+          extra_args = c("--no-sandbox", "--disable-gpu", "--allow-file-access-from-files")
+        ),
+        error = function(e) {
+          message("No se pudo generar la constancia con Chrome: ", conditionMessage(e))
+        }
       )
-      if (file.exists(destino_file) && file.info(destino_file)$size >= 5) {
+      con <- if (file.exists(destino_file)) file(destino_file, open = "rb") else NULL
+      firma_pdf <- if (is.null(con)) raw() else {
+        on.exit(close(con), add = TRUE)
+        readBin(con, what = "raw", n = 5L)
+      }
+      if (length(firma_pdf) == 5L && identical(firma_pdf, charToRaw("%PDF-")) && file.info(destino_file)$size > 100) {
         return(invisible(destino_file))
       }
     }
@@ -1952,9 +2150,14 @@ server <- function(input, output, session) {
       paste0("Constancia_Informativa_PDU_Anta_", format(Sys.time(), "%Y%m%d_%H%M"), ".pdf")
     },
     content = function(file) {
+      if (!sesion_vigente()) {
+        cerrar_sesion_pdu("tiempo_agotado")
+        stop("El tiempo de consulta asignado ha finalizado.")
+      }
       generar_constancia_pdf(file)
       metricas_supa(supabase_registrar_constancia())
-    }
+    },
+    contentType = "application/pdf"
   )
 
   output$btn_descargar_pdf_tab <- downloadHandler(
@@ -1962,9 +2165,14 @@ server <- function(input, output, session) {
       paste0("Constancia_Informativa_PDU_Anta_", format(Sys.time(), "%Y%m%d_%H%M"), ".pdf")
     },
     content = function(file) {
+      if (!sesion_vigente()) {
+        cerrar_sesion_pdu("tiempo_agotado")
+        stop("El tiempo de consulta asignado ha finalizado.")
+      }
       generar_constancia_pdf(file)
       metricas_supa(supabase_registrar_constancia())
-    }
+    },
+    contentType = "application/pdf"
   )
   
   # ----------------------------------------------------------------------------

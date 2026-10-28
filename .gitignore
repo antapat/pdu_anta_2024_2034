@@ -24,3 +24,7 @@ datos_supabase.R
 /seccion_vias/
 /secciones_viales/
 /data/secciones_viales/
+
+/.quarto/
+*.docx
+scratch/

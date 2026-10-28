@@ -75,12 +75,39 @@ ejecutando_en_shinyapps <- function() {
 }
 
 quarto_disponible <- function() {
-  tryCatch({
+  if (nzchar(Sys.getenv("QUARTO_PATH")) && file.exists(Sys.getenv("QUARTO_PATH"))) {
+    return(TRUE)
+  }
+  es_valido <- tryCatch({
     q_path <- quarto::quarto_path()
     !is.null(q_path) && nzchar(q_path) && file.exists(q_path)
-  }, error = function(e) {
-    nzchar(Sys.which("quarto"))
-  })
+  }, error = function(e) FALSE)
+  if (isTRUE(es_valido)) return(TRUE)
+  
+  en_path <- Sys.which("quarto")
+  if (nzchar(en_path) && file.exists(en_path)) {
+    Sys.setenv(QUARTO_PATH = normalizePath(en_path, winslash = "/", mustWork = FALSE))
+    return(TRUE)
+  }
+  
+  candidatos <- c(
+    file.path(Sys.getenv("LOCALAPPDATA"), "Programs", "Quarto", "bin", "quarto.exe"),
+    file.path(Sys.getenv("ProgramFiles"), "Quarto", "bin", "quarto.exe"),
+    "C:/Program Files/Quarto/bin/quarto.exe"
+  )
+  candidatos <- candidatos[nzchar(candidatos) & file.exists(candidatos)]
+  if (length(candidatos) > 0) {
+    ruta <- normalizePath(candidatos[1], winslash = "/", mustWork = TRUE)
+    Sys.setenv(QUARTO_PATH = ruta)
+    dir_q <- dirname(ruta)
+    p_actual <- Sys.getenv("PATH")
+    if (!grepl(dir_q, p_actual, fixed = TRUE)) {
+      Sys.setenv(PATH = paste(dir_q, p_actual, sep = ";"))
+    }
+    return(TRUE)
+  }
+  
+  FALSE
 }
 
 chrome_disponible <- function() {

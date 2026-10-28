@@ -108,14 +108,16 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
                     icon("arrow-up-right-from-square"), " Ver en El Peruano"
                   ),
                   tags$a(
-                    href = "aprobacion/ORDENANZA%20MUNICIPAL%20N%C2%B0004-2025-A-MPA-C.pdf",
+                    href = "https://drive.google.com/file/d/16rdvrpJ8hqi0Ctyqh-rgE8IffY21d4M_/view?usp=drive_link",
                     target = "_blank",
+                    rel = "noopener",
                     class = "btn btn-outline-secondary btn-sm",
                     icon("file-pdf"), " Descargar Ordenanza (PDF)"
                   ),
                   tags$a(
-                    href = "aprobacion/ORDENANZA%20MUNICIPAL%20N%C2%B0004-2025-A-MPA-C_EL_PERUANO.pdf",
+                    href = "https://drive.google.com/file/d/1g5-fbvzxJpteMD2-8M1hak5B9LwIrAP8/view?usp=drive_link",
                     target = "_blank",
+                    rel = "noopener",
                     class = "btn btn-outline-secondary btn-sm",
                     icon("file-lines"), " Facsímil El Peruano (PDF)"
                   )
@@ -150,8 +152,9 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
                 div(
                   class = "d-flex flex-wrap gap-2 pt-2 border-top",
                   tags$a(
-                    href = "aprobacion/ORDENANZA%20MUNICIPAL%20N%C2%B0008-2026-A-MPA-C.pdf",
+                    href = "https://drive.google.com/file/d/1psRABp2ZBRCYYomNMXjbOJIdWyE37Ivp/view?usp=drive_link",
                     target = "_blank",
+                    rel = "noopener",
                     class = "btn btn-outline-warning btn-sm fw-bold text-dark",
                     style = "border-color: #B68A2C;",
                     icon("file-pdf"), " Descargar Ordenanza de Actualización (PDF)"
@@ -162,7 +165,115 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
           )
         ),
         
-        # 3. ÁMBITO DE INTERVENCIÓN Y CONTINUIDAD URBANA
+        # 3. REPOSITORIO Y DESCARGA DE DOCUMENTOS TÉCNICOS DEL PDU (PDF)
+        div(
+          class = "mb-4 pt-3 border-top",
+          div(
+            class = "pdu-section-header",
+            icon("cloud-arrow-down", class = "fs-4 text-success"),
+            tags$h5("Descarga de Documentos Técnicos y Normativos del PDU (PDF)")
+          ),
+          tags$p(
+            class = "small text-secondary mb-3",
+            "Consulte y descargue en formato PDF los tomos oficiales de diagnóstico, propuesta territorial y el reglamento de zonificación del Plan de Desarrollo Urbano de Anta (2024 - 2034):"
+          ),
+          div(
+            class = "row g-3",
+            # Documento 1: Diagnóstico
+            div(
+              class = "col-lg-4 col-md-6 col-12",
+              div(
+                class = "p-3 pdu-doc-card h-100 d-flex flex-column justify-content-between shadow-sm",
+                style = "border: 1px solid #D6E4DE; border-top: 4px solid #174A3A;",
+                div(
+                  div(
+                    class = "d-flex justify-content-between align-items-center mb-2",
+                    span(class = "badge", style = "background: #174A3A; color: white;", icon("chart-pie"), " Tomo I"),
+                    span(class = "badge bg-light text-muted border", "PDF Oficial")
+                  ),
+                  tags$h6(class = "fw-bold mb-2", style = "color: #174A3A;", "Diagnóstico Urbano Territorial"),
+                  tags$p(
+                    class = "small text-muted mb-3",
+                    "Evaluación integral del territorio: análisis biofísico, demografía, actividades económicas, movilidad, equipamiento y análisis de riesgo de desastres."
+                  )
+                ),
+                div(
+                  class = "pt-2 border-top",
+                  tags$a(
+                    href = "https://drive.google.com/file/d/1zZOED2Hl5KlvgFTvzMUBuHYKpSLjZDLb/view?usp=drive_link",
+                    target = "_blank",
+                    rel = "noopener",
+                    class = "btn btn-outline-success btn-sm w-100 fw-bold",
+                    icon("download"), " Descargar Diagnóstico (PDF)"
+                  )
+                )
+              )
+            ),
+            # Documento 2: Propuesta
+            div(
+              class = "col-lg-4 col-md-6 col-12",
+              div(
+                class = "p-3 pdu-doc-card h-100 d-flex flex-column justify-content-between shadow-sm",
+                style = "border: 1px solid #D6E4DE; border-top: 4px solid #174A3A;",
+                div(
+                  div(
+                    class = "d-flex justify-content-between align-items-center mb-2",
+                    span(class = "badge", style = "background: #174A3A; color: white;", icon("compass-drafting"), " Tomo II"),
+                    span(class = "badge bg-light text-muted border", "PDF Oficial")
+                  ),
+                  tags$h6(class = "fw-bold mb-2", style = "color: #174A3A;", "Propuesta General y Específica"),
+                  tags$p(
+                    class = "small text-muted mb-3",
+                    "Modelo de desarrollo urbano al 2034: visión estratégica, clasificación de suelo, estructuración del sistema vial, zonificación y programa de inversiones."
+                  )
+                ),
+                div(
+                  class = "pt-2 border-top",
+                  tags$a(
+                    href = "https://drive.google.com/file/d/1gnOoxiVEoGgVlnm0cgXCZdzvX5JXcD4Y/view?usp=drive_link",
+                    target = "_blank",
+                    rel = "noopener",
+                    class = "btn btn-outline-success btn-sm w-100 fw-bold",
+                    icon("download"), " Descargar Propuesta (PDF)"
+                  )
+                )
+              )
+            ),
+            # Documento 3: Reglamento
+            div(
+              class = "col-lg-4 col-md-12 col-12",
+              div(
+                class = "p-3 pdu-doc-card h-100 d-flex flex-column justify-content-between shadow-sm",
+                style = "border: 1px solid #EADBB6; border-top: 4px solid #C59B27;",
+                div(
+                  div(
+                    class = "d-flex justify-content-between align-items-center mb-2",
+                    span(class = "badge", style = "background: #C59B27; color: white;", icon("scale-balanced"), " Normativa"),
+                    span(class = "badge bg-light text-muted border", "PDF Oficial")
+                  ),
+                  tags$h6(class = "fw-bold mb-2", style = "color: #86651F;", "Reglamento de Zonificación y Usos"),
+                  tags$p(
+                    class = "small text-muted mb-3",
+                    "Parámetros urbanísticos y edificatorios oficiales: alturas máximas, retiros, lotes mínimos, coeficientes de edificación y compatibilidad de usos."
+                  )
+                ),
+                div(
+                  class = "pt-2 border-top",
+                  tags$a(
+                    href = "https://drive.google.com/file/d/1i1pz6cKLwnyCiNAVD4DvGzHRTUjW2S8p/view?usp=drive_link",
+                    target = "_blank",
+                    rel = "noopener",
+                    class = "btn btn-outline-warning btn-sm w-100 fw-bold text-dark",
+                    style = "border-color: #C59B27;",
+                    icon("download"), " Descargar Reglamento (PDF)"
+                  )
+                )
+              )
+            )
+          )
+        ),
+        
+        # 4. ÁMBITO DE INTERVENCIÓN Y CONTINUIDAD URBANA
         div(
           class = "mb-4",
           div(
@@ -266,7 +377,7 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
           )
         ),
         
-        # 4. SECTORIZACIÓN URBANA
+        # 5. SECTORIZACIÓN URBANA
         div(
           class = "mb-4 pt-3 border-top",
           div(
@@ -364,7 +475,7 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
           )
         ),
         
-        # 5. COMPONENTES ESTRUCTURANTES: SISTEMA VIAL Y SERVIDUMBRES
+        # 6. COMPONENTES ESTRUCTURANTES: SISTEMA VIAL Y SERVIDUMBRES
         div(
           class = "mb-4 pt-3 border-top",
           div(
@@ -404,7 +515,7 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
           )
         ),
         
-        # 6. MARCO NORMATIVO ASOCIADO A LA PLANIFICACIÓN URBANA
+        # 7. MARCO NORMATIVO ASOCIADO A LA PLANIFICACIÓN URBANA
         div(
           class = "mb-4 pt-3 border-top",
           div(

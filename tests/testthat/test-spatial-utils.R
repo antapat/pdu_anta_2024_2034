@@ -45,3 +45,7 @@ test_that("la impresión PDF se deshabilita en shinyapps.io para Chrome pero det
   expect_type(pdf_motor_disponible(), "logical")
 })
 
+test_that("al menos un motor PDF está disponible en el entorno local", {
+  expect_true(pdf_motor_disponible())
+})
+

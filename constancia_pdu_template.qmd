@@ -102,21 +102,7 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
 ]
 #v(1pt)
 
-#block(
-  fill: rgb("#FFF7D6"),
-  inset: (x: 8pt, y: 4pt),
-  radius: 3pt,
-  stroke: 0.5pt + rgb("#B88808"),
-  width: 100%,
-  [
-    #text(size: 6.8pt)[
-      *Instrumento de Gestión:* Plan de Desarrollo Urbano de Anta (PDU 2024 - 2034) \
-      *Identificador de Consulta:* #text(weight: "bold", fill: rgb("#006633"))[`r dat$codigo_consulta`] | *Fecha y Hora:* `r dat$fecha_hora`
-    ]
-  ]
-)
 
-#v(1pt)
 #block(
   fill: rgb("#FFFBEB"),
   inset: (x: 8pt, y: 3.5pt),
@@ -273,7 +259,29 @@ cat("\n")
 
 ```{r}
 #| results: 'asis'
-source("R/reglamento_utils.R", local = TRUE, encoding = "UTF-8")
+if (file.exists("R/reglamento_utils.R")) {
+  source("R/reglamento_utils.R", local = TRUE, encoding = "UTF-8")
+} else if (file.exists("../R/reglamento_utils.R")) {
+  source("../R/reglamento_utils.R", local = TRUE, encoding = "UTF-8")
+}
+
+if (!exists("pdu_campos_adicionales_reglamento", mode = "function")) {
+  pdu_campos_adicionales_reglamento <- function(parametro) {
+    campos <- c(
+      ESTACIONAMIENTOS = "Estacionamientos mínimos", VOLADIZOS = "Voladizos sobre retiro",
+      RESTRICCIONES = "Restricciones", NOTAS_APLICACION = "Notas de aplicación",
+      CONDICIONES_GENERALES = "Condiciones complementarias de aplicación",
+      FUENTE_NORMATIVA = "Fuente normativa",
+      OBSERVACIONES_FUENTE = "Observaciones del documento",
+      OBSERVACIONES_CARTOGRAFIA = "Observaciones cartográficas"
+    )
+    campos <- campos[names(campos) %in% names(parametro)]
+    campos[vapply(names(campos), function(campo) {
+      valor <- parametro[[campo]]
+      length(valor) > 0 && !is.na(valor[[1]]) && nzchar(valor[[1]])
+    }, logical(1))]
+  }
+}
 pdu_md <- function(x) {
   x <- gsub("|", "\\|", as.character(x), fixed = TRUE)
   gsub("[\r\n]+", " / ", x)

@@ -234,6 +234,88 @@ nav.navbar-static-top {
   opacity: 0.9 !important;
 }
 
+/* Temporizador Visual de Sesión de Consulta (Etapa 1 - Control de Tiempo) */
+.timer-chip-pdu {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  border-radius: 14px !important;
+  padding: 2px 10px !important;
+  line-height: 1.35 !important;
+  transition: all 0.25s ease !important;
+  user-select: none !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 3px rgba(15, 45, 36, 0.06) !important;
+}
+
+.timer-chip-pdu .timer-label {
+  font-weight: 500 !important;
+  opacity: 0.85 !important;
+}
+
+.timer-chip-pdu .timer-digits {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Courier New', monospace !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.4px !important;
+}
+
+/* Estado normal (> 60 segundos) */
+.timer-chip-normal {
+  background-color: #EDF4F0 !important;
+  border: 1px solid #B7D3C3 !important;
+  color: #174A3A !important;
+}
+.timer-chip-normal i,
+.timer-chip-normal svg {
+  color: #174A3A !important;
+}
+
+/* Estado aviso (<= 60 y > 30 segundos) */
+.timer-chip-warning {
+  background-color: #FEF3C7 !important;
+  border: 1px solid #F59E0B !important;
+  color: #92400E !important;
+  animation: pdu-timer-pulse-soft 2s infinite ease-in-out !important;
+}
+.timer-chip-warning i,
+.timer-chip-warning svg {
+  color: #D97706 !important;
+}
+
+/* Estado crítico (<= 30 segundos) */
+.timer-chip-danger {
+  background-color: #FEE2E2 !important;
+  border: 1px solid #EF4444 !important;
+  color: #991B1B !important;
+  animation: pdu-timer-pulse-danger 1s infinite ease-in-out !important;
+}
+.timer-chip-danger i,
+.timer-chip-danger svg {
+  color: #DC2626 !important;
+}
+
+@keyframes pdu-timer-pulse-soft {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+  }
+}
+
+@keyframes pdu-timer-pulse-danger {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.15);
+    transform: scale(1.02);
+  }
+}
+
 /* Enlaces de Navegación y Pestañas del Navbar */
 .navbar .navbar-nav > li > a,
 .navbar .navbar-nav .nav-link,
@@ -1495,3 +1577,146 @@ html, body {
   color: var(--dorado-oscuro);
   border: 1px solid var(--dorado-borde);
 }
+
+.pdu-doc-card {
+  background: #FFFFFF;
+  border-radius: var(--radius-md);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.pdu-doc-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* ==========================================================================
+   MODAL Y DESCONEXIÓN AMIGABLE POR TIEMPO LÍMITE (ETAPA 1 - CONTROL DE TIEMPO)
+   ========================================================================== */
+
+/* Ocultar el overlay estándar y tosco de Shiny */
+#shiny-disconnected-overlay {
+  display: none !important;
+}
+
+.pdu-timeout-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(11, 43, 34, 0.82) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  z-index: 999999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1.25rem !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.pdu-timeout-backdrop.active {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.pdu-timeout-modal-card {
+  background: #FFFFFF !important;
+  border-radius: 18px !important;
+  max-width: 500px !important;
+  width: 100% !important;
+  box-shadow: 0 25px 50px -12px rgba(11, 43, 34, 0.38), 0 0 0 1px rgba(23, 74, 58, 0.12) !important;
+  overflow: hidden !important;
+  transform: translateY(20px) scale(0.96);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.pdu-timeout-backdrop.active .pdu-timeout-modal-card {
+  transform: translateY(0) scale(1) !important;
+}
+
+.pdu-timeout-header {
+  background: linear-gradient(135deg, #174A3A 0%, #0E3529 100%) !important;
+  color: #FFFFFF !important;
+  padding: 1.6rem 1.75rem 1.3rem 1.75rem !important;
+  text-align: center !important;
+  position: relative !important;
+}
+
+.pdu-timeout-icon-circle {
+  width: 60px !important;
+  height: 60px !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 2px solid rgba(182, 138, 44, 0.6) !important;
+  border-radius: 50% !important;
+  margin: 0 auto 0.85rem auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.65rem !important;
+  color: #E5D39F !important;
+}
+
+.pdu-timeout-title {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  margin: 0 0 0.3rem 0 !important;
+  letter-spacing: -0.2px !important;
+  color: #FFFFFF !important;
+}
+
+.pdu-timeout-subtitle {
+  font-size: 0.83rem !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  margin: 0 !important;
+}
+
+.pdu-timeout-body {
+  padding: 1.5rem 1.75rem !important;
+  color: #2D3748 !important;
+  font-size: 0.93rem !important;
+  line-height: 1.55 !important;
+}
+
+.pdu-timeout-callout {
+  background: #F4F8F5 !important;
+  border-left: 4px solid #174A3A !important;
+  border-radius: 6px !important;
+  padding: 0.85rem 1rem !important;
+  margin: 1.1rem 0 !important;
+  font-size: 0.86rem !important;
+  color: #374151 !important;
+}
+
+.pdu-timeout-footer {
+  padding: 0 1.75rem 1.6rem 1.75rem !important;
+  text-align: center !important;
+}
+
+.btn-pdu-reconnect {
+  background: linear-gradient(135deg, #174A3A 0%, #10392D 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  font-size: 0.96rem !important;
+  padding: 0.78rem 1.5rem !important;
+  border-radius: 10px !important;
+  border: none !important;
+  width: 100% !important;
+  box-shadow: 0 4px 14px rgba(23, 74, 58, 0.28) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 9px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-pdu-reconnect:hover {
+  background: linear-gradient(135deg, #1B5543 0%, #134335 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 18px rgba(23, 74, 58, 0.38) !important;
+  color: #FFFFFF !important;
+}
+

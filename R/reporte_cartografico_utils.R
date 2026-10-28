@@ -106,11 +106,15 @@ generar_mapa_certificado <- function(geom_sf, es_poligono = TRUE, ruta_salida_pn
       pal_zonif <- pal_subzonas[subzonas_presentes]
       pal_zonif[is.na(pal_zonif)] <- "#BCBDBE"
       
-      p <- p + geom_sf(data = zonif_crop, aes(fill = COD_S_ZONA), color = "#475569", linewidth = 0.35, alpha = 0.8) +
+      p <- p + geom_sf(data = zonif_crop, aes(fill = COD_S_ZONA, color = COD_S_ZONA), linewidth = 0.35, alpha = 0.8) +
         scale_fill_manual(
           values = pal_zonif,
           name = "Zonificación Normativa",
           guide = guide_legend(ncol = 4, byrow = TRUE, title.position = "top")
+        ) +
+        scale_color_manual(
+          values = pal_zonif,
+          guide = "none"
         )
     }
     

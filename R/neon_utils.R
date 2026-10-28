@@ -27,13 +27,9 @@ neon_conectar <- function() {
   dbname <- Sys.getenv("NEON_DB", "neondb")
   port <- as.integer(Sys.getenv("NEON_PORT", "5432"))
   
-  # Si no hay variables de entorno, usar la configuración oficial del proyecto Neon
-  if (!nzchar(db_url) && !nzchar(host)) {
-    host <- "ep-dark-leaf-ar15e2f4-pooler.c-4.us-west-2.aws.neon.tech"
-    user <- "neondb_owner"
-    password <- "npg_9sGhLlAai3RB"
-    dbname <- "neondb"
-    port <- 5432
+  # Si no hay variables de entorno ni URL configuradas, retornar NULL para operar en modo local seguro
+  if (!nzchar(db_url) && (!nzchar(host) || !nzchar(password))) {
+    return(NULL)
   }
   
   tryCatch({
