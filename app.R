@@ -76,7 +76,7 @@ ORDENANZA_APROBACION_PDU <- "ORDENANZA MUNICIPAL Nº 04-2025-A-MPA/C"
 ORDENANZA_ACTUALIZACION_PDU <- "ORDENANZA MUNICIPAL N°008-2026-A-MPA-C"
 URL_EL_PERUANO_PDU <- "https://busquedas.elperuano.pe/dispositivo/NL/2407024-1"
 CARACTER_INFORMATIVO <- paste(
-  "Documento de carácter exclusivamente informativo. No constituye certificado oficial,",
+  "Ficha de carácter exclusivamente informativo. No constituye certificado oficial,",
   "no genera derechos urbanísticos ni reemplaza la verificación técnica municipal.",
   "El certificado oficial debe tramitarse ante la Gerencia de Desarrollo Urbano y Rural",
   "de la Municipalidad Provincial de Anta."
@@ -288,7 +288,7 @@ ui <- page_navbar(
               </p>
               <div class=\"pdu-timeout-callout\">
                 <i class=\"fa fa-circle-info text-success me-1\"></i>
-                Si requiere continuar consultando información territorial, zonificación o generar constancias técnicas, puede iniciar una nueva sesión inmediatamente.
+                Si requiere continuar consultando información territorial, zonificación o generar fichas informativas, puede iniciar una nueva sesión inmediatamente.
               </div>
             </div>
             <div class=\"pdu-timeout-footer\">
@@ -449,7 +449,7 @@ ui <- page_navbar(
   
   # --- PESTAÑA 2: CERTIFICADO INFORMATIVO DIRECTO EN APP ---
   nav_panel(
-    title = "Reporte Informativo",
+    title = "Ficha Informativa",
     value = "tab_certificado",
     icon = icon("file-invoice"),
     
@@ -457,7 +457,7 @@ ui <- page_navbar(
       class = "container-fluid px-lg-5 px-2 px-sm-3 py-3",
       div(
         class = "alert alert-warning border-0 shadow-sm reporte-disclaimer mb-3",
-        icon("circle-info"), tags$b(" Alcance del reporte: "), CARACTER_INFORMATIVO
+        icon("circle-info"), tags$b(" Alcance de la ficha: "), CARACTER_INFORMATIVO
       ),
       div(
         class = "d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2 mb-3 pb-2 border-bottom bg-white p-2 p-sm-3 rounded shadow-sm",
@@ -549,7 +549,7 @@ server <- function(input, output, session) {
           ),
           tags$p(
             class = "mb-0 mt-1",
-            "Le recomendamos descargar su constancia técnica o informe cartográfico antes del vencimiento."
+            "Le recomendamos descargar su ficha informativa técnica o plano cartográfico antes del vencimiento."
           )
         ),
         duration = 12,
@@ -1176,13 +1176,25 @@ server <- function(input, output, session) {
     inter_dist <- if (nrow(capas$distritos)) st_intersection(poly_4326, capas$distritos) else capas$distritos
     distritos_list <- if (nrow(inter_dist) > 0) unique(inter_dist$NOMBDIST) else if (nrow(capas$ambito) > 0 && "NOMBDIST" %in% names(capas$ambito)) capas$ambito$NOMBDIST[1] else "Anta"
     
-    # 3. Alta Tensión
+    # 3. Alta Tensión (Servidumbre Eléctrica)
     area_at_m2 <- area_interseccion_unica_m2(poly_4326, capas$alta_tension_buffer)
     pct_at <- min(100, (area_at_m2 / area_total_m2) * 100)
+    inter_at <- suppressWarnings(st_intersection(poly_4326, capas$alta_tension_buffer))
+    lineas_at_txt <- if (nrow(inter_at) > 0) {
+      nom_l <- unique(na.omit(inter_at$NOM_LINEA))
+      volt_l <- unique(na.omit(inter_at$TENS_NOMIN))
+      paste0(paste(nom_l, collapse = " / "), " (", paste(volt_l, collapse = ", "), ")")
+    } else ""
     
-    # 4. Ferrocarril
+    # 4. Ferrocarril (Zona de Influencia / Derecho de Vía)
     area_ffcc_m2 <- area_interseccion_unica_m2(poly_4326, capas$ferrocarril_buffer)
     pct_ffcc <- min(100, (area_ffcc_m2 / area_total_m2) * 100)
+    inter_ffcc <- suppressWarnings(st_intersection(poly_4326, capas$ferrocarril_buffer))
+    lineas_ffcc_txt <- if (nrow(inter_ffcc) > 0) {
+      nom_f <- unique(na.omit(inter_ffcc$NOM_FERR))
+      tramo_f <- unique(na.omit(inter_ffcc$TRAMO_FERR))
+      paste0(paste(nom_f, collapse = " / "), " (Tramo: ", paste(tramo_f, collapse = ", "), ")")
+    } else "" 
     
     # 5. Sistema Vial Propuesto Intersectado o Colindante (Buffer estricto de 25 metros)
     vias_utm <- st_transform(capas$vias, 32718)
@@ -1257,6 +1269,8 @@ server <- function(input, output, session) {
       pct_en_ambito = round(pct_en_ambito, 3),
       distritos = distritos_list,
       area_at_m2 = round(area_at_m2, 3),
+      lineas_at_txt = lineas_at_txt,
+      lineas_ffcc_txt = lineas_ffcc_txt,
       pct_at = round(pct_at, 3),
       area_ffcc_m2 = round(area_ffcc_m2, 3),
       pct_ffcc = round(pct_ffcc, 3),
@@ -1399,7 +1413,7 @@ server <- function(input, output, session) {
     
     tagList(
       if (pdf_motor_disponible()) downloadButton(
-        "btn_descargar_pdf_tab", "📥 Descargar Constancia PDF",
+        "btn_descargar_pdf_tab", "📥 Descargar Ficha Informativa (PDF)",
         class = "btn btn-success fw-bold"
       ) else div(
         class = "text-muted small",
@@ -1453,7 +1467,21 @@ server <- function(input, output, session) {
       @page { size: A4 portrait; margin: 6mm 8mm 6mm 8mm; }
       body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ffffff; color: #202020; margin: 0; padding: 0; font-size: 12px; line-height: 1.30; width: 100%; box-sizing: border-box; }
       .cert-card { width: 100%; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
-      .cert-page { width: 100%; box-sizing: border-box; min-height: 280mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+      .cert-page { width: 100%; box-sizing: border-box; min-height: 280mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; position: relative; }
+      .cert-watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-35deg);
+        font-size: 52pt;
+        font-weight: 800;
+        color: rgba(180, 180, 180, 0.16);
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 50;
+        user-select: none;
+        letter-spacing: 4px;
+      }
       .cert-page:last-child { page-break-after: auto; }
       .cert-page-body { flex-grow: 1; display: flex; flex-direction: column; }
       
@@ -1502,6 +1530,7 @@ server <- function(input, output, session) {
         @page { size: A4 portrait; margin: 6mm 8mm 6mm 8mm; }
         body { margin: 0; padding: 0; }
         .cert-card { width: 100% !important; max-width: 100% !important; margin: 0; padding: 0; }
+        .cert-watermark { color: rgba(180, 180, 180, 0.20) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .cert-page { height: 284mm !important; max-height: 284mm !important; min-height: 284mm !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; page-break-after: always !important; page-break-inside: avoid !important; overflow: hidden !important; }
         .cert-page:last-child { page-break-after: auto !important; }
         .cert-page-body { flex-grow: 1; display: flex; flex-direction: column; }
@@ -1600,8 +1629,21 @@ server <- function(input, output, session) {
       en_ambito <- any(st_intersects(pt_sf, capas$ambito, sparse = FALSE)[1, ])
       dist_match <- if (nrow(capas$distritos) > 0) st_join(pt_sf, capas$distritos, join = st_intersects)$NOMBDIST[1] else NA_character_
       distrito_nombre <- if (!is.na(dist_match)) dist_match else if (nrow(capas$ambito) > 0 && "NOMBDIST" %in% names(capas$ambito)) capas$ambito$NOMBDIST[1] else "Anta"
-      en_serv_at <- any(st_intersects(pt_sf, capas$alta_tension_buffer, sparse = FALSE)[1, ])
-      en_serv_ffcc <- any(st_intersects(pt_sf, capas$ferrocarril_buffer, sparse = FALSE)[1, ])
+      idx_at <- which(st_intersects(pt_sf, capas$alta_tension_buffer, sparse = FALSE)[1, ])
+      en_serv_at <- length(idx_at) > 0
+      lineas_at_pt_txt <- if (en_serv_at) {
+        nom_l <- unique(na.omit(capas$alta_tension_buffer$NOM_LINEA[idx_at]))
+        volt_l <- unique(na.omit(capas$alta_tension_buffer$TENS_NOMIN[idx_at]))
+        paste0(paste(nom_l, collapse = " / "), " (", paste(volt_l, collapse = ", "), ")")
+      } else ""
+      
+      idx_ffcc <- which(st_intersects(pt_sf, capas$ferrocarril_buffer, sparse = FALSE)[1, ])
+      en_serv_ffcc <- length(idx_ffcc) > 0
+      lineas_ffcc_pt_txt <- if (en_serv_ffcc) {
+        nom_f <- unique(na.omit(capas$ferrocarril_buffer$NOM_FERR[idx_ffcc]))
+        tramo_f <- unique(na.omit(capas$ferrocarril_buffer$TRAMO_FERR[idx_ffcc]))
+        paste0(paste(nom_f, collapse = " / "), " (Tramo: ", paste(tramo_f, collapse = ", "), ")")
+      } else "" 
       
       # Vía propuesta colindante (Buffer estricto 25m)
       vias_utm <- st_transform(capas$vias, 32718)
@@ -1654,6 +1696,7 @@ server <- function(input, output, session) {
             # --- PÁGINA 1: HOJA DEL PLANO CARTOGRÁFICO OFICIAL A PÁGINA COMPLETA ---
             div(
               class = "cert-page",
+              div(class = "cert-watermark", "DOCUMENTO INFORMATIVO"),
               div(
                 class = "cert-page-body",
                 header_banner_p1,
@@ -1674,6 +1717,7 @@ server <- function(input, output, session) {
             # --- PÁGINA 2: DATOS Y PARÁMETROS NORMATIVOS ---
             div(
               class = "cert-page cert-page-technical",
+              div(class = "cert-watermark", "DOCUMENTO INFORMATIVO"),
               div(
                 class = "cert-page-body",
                 header_banner_p2,
@@ -1761,7 +1805,7 @@ server <- function(input, output, session) {
         tags$head(
           tags$meta(charset = "utf-8"),
           tags$meta(name = "viewport", content = "width=device-width, initial-scale=1, shrink-to-fit=no"),
-          tags$title("Reporte Informativo de Zonificación de Predio - PDU Anta"),
+          tags$title("Ficha Informativa de Zonificación de Predio - PDU Anta"),
           tags$style(HTML(css_certificado))
         ),
         tags$body(
@@ -1771,6 +1815,7 @@ server <- function(input, output, session) {
             # --- PÁGINA 1: HOJA DEL PLANO CARTOGRÁFICO OFICIAL A PÁGINA COMPLETA ---
             div(
               class = "cert-page",
+              div(class = "cert-watermark", "DOCUMENTO INFORMATIVO"),
               div(
                 class = "cert-page-body",
                 header_banner_p1,
@@ -1801,7 +1846,9 @@ server <- function(input, output, session) {
                     tags$tr(tags$th("Área Total del Predio:"), tags$td(tags$b(paste0(poly_data$area_m2, " m² (", poly_data$area_has, " ha)")))),
                     tags$tr(tags$th("Perímetro Total:"), tags$td(paste0(poly_data$perimetro_m, " ml"))),
                     tags$tr(tags$th("Distrito(s) Administrativo(s):"), tags$td(paste(poly_data$distritos, collapse = ", "))),
-                    tags$tr(tags$th("Ámbito Reglamentado PDU:"), tags$td(if (!ambito_disponible) "No disponible" else paste0(poly_data$pct_en_ambito, "% dentro del área PDU Anta")))
+                    tags$tr(tags$th("Ámbito Reglamentado PDU:"), tags$td(if (!ambito_disponible) "No disponible" else paste0(poly_data$pct_en_ambito, "% dentro del área PDU Anta"))),
+                    tags$tr(tags$th("Faja de Servidumbre Eléctrica:"), tags$td(if (poly_data$pct_at > 0) tags$b(class = "text-danger", paste0("⚠️ Afectación: ", poly_data$area_at_m2, " m² (", poly_data$pct_at, "% del predio)", if (!is.null(poly_data$lineas_at_txt) && nzchar(poly_data$lineas_at_txt)) paste0(" — Línea: ", poly_data$lineas_at_txt) else "")) else "✓ Sin afectación")),
+                    tags$tr(tags$th("Zona de Influencia Ferrocarril:"), tags$td(if (poly_data$pct_ffcc > 0) tags$b(class = "text-warning", paste0("⚠️ Proximidad: ", poly_data$area_ffcc_m2, " m² (", poly_data$pct_ffcc, "% del predio)", if (!is.null(poly_data$lineas_ffcc_txt) && nzchar(poly_data$lineas_ffcc_txt)) paste0(" — Vía: ", poly_data$lineas_ffcc_txt) else "")) else "✓ Sin proximidad"))
                   )
                 ),
                 
@@ -1858,8 +1905,8 @@ server <- function(input, output, session) {
                 tags$div(class = "section-heading", "4. AFECTACIONES POR INFRAESTRUCTURA"),
                 tags$ul(
                   class = "cert-list",
-                  tags$li(if (poly_data$pct_at > 0) tags$b(class = "text-danger", paste0("⚠️ Servidumbre Alta Tensión: ", poly_data$area_at_m2, " m² (", poly_data$pct_at, "% del predio).")) else "✓ Sin afectación por fajas de alta tensión."),
-                  tags$li(if (poly_data$pct_ffcc > 0) tags$b(class = "text-warning", paste0("⚠️ Zona de influencia del ferrocarril: ", poly_data$area_ffcc_m2, " m² (", poly_data$pct_ffcc, "% del predio). Requiere verificación sectorial.")) else "✓ Sin proximidad a la zona de influencia del ferrocarril.")
+                  tags$li(if (poly_data$pct_at > 0) tags$b(class = "text-danger", paste0("⚠️ Servidumbre Alta Tensión: ", poly_data$area_at_m2, " m² (", poly_data$pct_at, "% del predio)", if (!is.null(poly_data$lineas_at_txt) && nzchar(poly_data$lineas_at_txt)) paste0(" — Línea: ", poly_data$lineas_at_txt) else "", ". Prohibida edificación dentro de la faja.")) else "✓ Sin afectación por fajas de servidumbre de líneas de alta tensión (CNE)."),
+                  tags$li(if (poly_data$pct_ffcc > 0) tags$b(class = "text-warning", paste0("⚠️ Zona de influencia del ferrocarril: ", poly_data$area_ffcc_m2, " m² (", poly_data$pct_ffcc, "% del predio)", if (!is.null(poly_data$lineas_ffcc_txt) && nzchar(poly_data$lineas_ffcc_txt)) paste0(" — Vía: ", poly_data$lineas_ffcc_txt) else "", ". Requiere verificación sectorial ante el MTC.")) else "✓ Sin proximidad a la zona de influencia del ferrocarril (D.S. 032-2005-MTC).")
                 ),
                 
                 tags$div(class = "section-heading", "5. PARÁMETROS URBANÍSTICOS POR ZONA"),
@@ -1923,8 +1970,21 @@ server <- function(input, output, session) {
       en_ambito <- any(st_intersects(pt_sf, capas$ambito, sparse = FALSE)[1, ])
       dist_match <- if (nrow(capas$distritos) > 0) st_join(pt_sf, capas$distritos, join = st_intersects)$NOMBDIST[1] else NA_character_
       distrito_nombre <- if (!is.na(dist_match)) dist_match else if (nrow(capas$ambito) > 0 && "NOMBDIST" %in% names(capas$ambito)) capas$ambito$NOMBDIST[1] else "Anta"
-      en_serv_at <- any(st_intersects(pt_sf, capas$alta_tension_buffer, sparse = FALSE)[1, ])
-      en_serv_ffcc <- any(st_intersects(pt_sf, capas$ferrocarril_buffer, sparse = FALSE)[1, ])
+      idx_at <- which(st_intersects(pt_sf, capas$alta_tension_buffer, sparse = FALSE)[1, ])
+      en_serv_at <- length(idx_at) > 0
+      lineas_at_pt_txt <- if (en_serv_at) {
+        nom_l <- unique(na.omit(capas$alta_tension_buffer$NOM_LINEA[idx_at]))
+        volt_l <- unique(na.omit(capas$alta_tension_buffer$TENS_NOMIN[idx_at]))
+        paste0(paste(nom_l, collapse = " / "), " (", paste(volt_l, collapse = ", "), ")")
+      } else ""
+      
+      idx_ffcc <- which(st_intersects(pt_sf, capas$ferrocarril_buffer, sparse = FALSE)[1, ])
+      en_serv_ffcc <- length(idx_ffcc) > 0
+      lineas_ffcc_pt_txt <- if (en_serv_ffcc) {
+        nom_f <- unique(na.omit(capas$ferrocarril_buffer$NOM_FERR[idx_ffcc]))
+        tramo_f <- unique(na.omit(capas$ferrocarril_buffer$TRAMO_FERR[idx_ffcc]))
+        paste0(paste(nom_f, collapse = " / "), " (Tramo: ", paste(tramo_f, collapse = ", "), ")")
+      } else "" 
       
       vias_utm <- st_transform(capas$vias, 32718)
       dists_v <- as.numeric(st_distance(pt_data$geom_utm, vias_utm))
@@ -1989,8 +2049,12 @@ server <- function(input, output, session) {
         area_has = "N/A",
         perimetro_m = "N/A",
         pct_en_ambito = if (!ambito_disponible) "No disponible" else if (en_ambito) "100" else "0",
-        servidumbre_at = if (en_serv_at) "⚠️ Afectación por faja de alta tensión (CNE)" else "No",
-        servidumbre_ffcc = if (en_serv_ffcc) "⚠️ Proximidad a la zona de influencia del ferrocarril (MTC)" else "No",
+        servidumbre_at = if (en_serv_at) {
+          if (nzchar(lineas_at_pt_txt)) paste0("⚠️ Faja de servidumbre: Línea ", lineas_at_pt_txt, " (CNE)") else "⚠️ Afectación por faja de alta tensión (CNE)"
+        } else "No",
+        servidumbre_ffcc = if (en_serv_ffcc) {
+          if (nzchar(lineas_ffcc_pt_txt)) paste0("⚠️ Zona de influencia ferroviaria: ", lineas_ffcc_pt_txt, " (MTC)") else "⚠️ Proximidad a la zona de influencia del ferrocarril (MTC)"
+        } else "No",
         tabla_zonif = tabla_zonif,
         tabla_vias = tabla_vias,
         lista_parametros = lista_parametros,
@@ -2015,8 +2079,14 @@ server <- function(input, output, session) {
         area_has = format(poly_data$area_has, big.mark = ","),
         perimetro_m = format(poly_data$perimetro_m, big.mark = ","),
         pct_en_ambito = as.character(poly_data$pct_en_ambito),
-        servidumbre_at = if (poly_data$pct_at > 0) paste0(poly_data$area_at_m2, " m² (", poly_data$pct_at, "% del predio)") else "No",
-        servidumbre_ffcc = if (poly_data$pct_ffcc > 0) paste0(poly_data$area_ffcc_m2, " m² (", poly_data$pct_ffcc, "% del predio)") else "No",
+        servidumbre_at = if (poly_data$pct_at > 0) {
+          base_at <- paste0(poly_data$area_at_m2, " m² (", poly_data$pct_at, "% del predio)")
+          if (!is.null(poly_data$lineas_at_txt) && nzchar(poly_data$lineas_at_txt)) paste0(base_at, " — Línea: ", poly_data$lineas_at_txt) else base_at
+        } else "No",
+        servidumbre_ffcc = if (poly_data$pct_ffcc > 0) {
+          base_ffcc <- paste0(poly_data$area_ffcc_m2, " m² (", poly_data$pct_ffcc, "% del predio)")
+          if (!is.null(poly_data$lineas_ffcc_txt) && nzchar(poly_data$lineas_ffcc_txt)) paste0(base_ffcc, " — Vía: ", poly_data$lineas_ffcc_txt) else base_ffcc
+        } else "No",
         tabla_zonif = poly_data$tabla_zonif,
         tabla_vias = poly_data$tabla_vias_predio,
         lista_parametros = poly_data$lista_parametros_zonas,
@@ -2146,7 +2216,7 @@ server <- function(input, output, session) {
   # Descarga PDF Oficial (Botón en el panel lateral)
   output$btn_descargar_pdf <- downloadHandler(
     filename = function() {
-      paste0("Constancia_Informativa_PDU_Anta_", format(Sys.time(), "%Y%m%d_%H%M"), ".pdf")
+      paste0("Ficha_Informativa_PDU_Anta_", format(Sys.time(), "%Y%m%d_%H%M"), ".pdf")
     },
     content = function(file) {
       if (!sesion_vigente()) {
@@ -2161,7 +2231,7 @@ server <- function(input, output, session) {
 
   output$btn_descargar_pdf_tab <- downloadHandler(
     filename = function() {
-      paste0("Constancia_Informativa_PDU_Anta_", format(Sys.time(), "%Y%m%d_%H%M"), ".pdf")
+      paste0("Ficha_Informativa_PDU_Anta_", format(Sys.time(), "%Y%m%d_%H%M"), ".pdf")
     },
     content = function(file) {
       if (!sesion_vigente()) {
@@ -2205,8 +2275,8 @@ server <- function(input, output, session) {
       ),
       span(
         class = "counter-chip-mini",
-        title = "Constancias técnicas generadas",
-        icon("file-lines"), tags$span(class = "counter-chip-val", format(metricas$constancias_total, big.mark = ",", scientific = FALSE)), " constancias"
+        title = "Fichas informativas generadas",
+        icon("file-lines"), tags$span(class = "counter-chip-val", format(metricas$constancias_total, big.mark = ",", scientific = FALSE)), " fichas"
       )
     )
   })

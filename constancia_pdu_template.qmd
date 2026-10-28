@@ -52,6 +52,19 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
 
 // Encabezado y Pie de página oficiales
 #set page(
+  background: place(
+    center + horizon,
+    rotate(
+      -35deg,
+      text(
+        size: 46pt,
+        fill: rgb(180, 180, 180, 24%),
+        weight: "bold",
+        font: "Arial",
+        "DOCUMENTO INFORMATIVO"
+      )
+    )
+  ),
   header: [
     #grid(
       columns: (45pt, 1fr, 55pt),
@@ -83,7 +96,7 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
       align: (left + horizon, right + horizon),
       [
         #text(size: 6.5pt, fill: rgb("#64748B"))[
-          *Municipalidad Provincial de Anta* — Gerencia de Desarrollo Urbano y Rural | *Consulta:* `r dat$fecha_hora` | *Cód:* `r dat$codigo_consulta`
+          *Municipalidad Provincial de Anta* — Gerencia de Desarrollo Urbano y Rural | *Ficha:* `r dat$fecha_hora` | *Cód:* `r dat$codigo_consulta`
         ]
       ],
       [
@@ -97,7 +110,7 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
 
 #v(-6pt)
 #align(center)[
-  #text(weight: "bold", size: 10.5pt, fill: rgb("#006633"))[CONSTANCIA INFORMATIVA DE ZONIFICACIÓN Y PARÁMETROS URBANÍSTICOS]\
+  #text(weight: "bold", size: 10.5pt, fill: rgb("#006633"))[FICHA INFORMATIVA DE ZONIFICACIÓN Y PARÁMETROS URBANÍSTICOS]\
   #text(size: 7.5pt, fill: rgb("#64748B"), weight: "bold")[PLAN DE DESARROLLO URBANO DE ANTA (PDU 2024 - 2034)]
 ]
 #v(1pt)
@@ -111,7 +124,7 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
   width: 100%,
   [
     #text(size: 6.0pt, fill: rgb("#78350F"))[
-      *Carácter Informativo:* Documento de carácter exclusivamente informativo. No constituye certificado oficial, no genera derechos urbanísticos ni reemplaza la verificación técnica municipal. El certificado oficial debe tramitarse ante la Gerencia de Desarrollo Urbano y Rural de la Municipalidad Provincial de Anta.
+      *Carácter Informativo:* Ficha de carácter exclusivamente informativo. No constituye certificado oficial, no genera derechos urbanísticos ni reemplaza la verificación técnica municipal. El certificado oficial debe tramitarse ante la Gerencia de Desarrollo Urbano y Rural de la Municipalidad Provincial de Anta.
     ]
   ]
 )
@@ -148,14 +161,16 @@ if (isTRUE(dat$es_poligono)) {
     "| Parámetro | Detalle | Parámetro | Detalle |\n",
     "| :--- | :--- | :--- | :--- |\n",
     "| **Área del Predio:** | ", dat$area_m2, " m² (", dat$area_has, " ha) | **Perímetro Total:** | ", dat$perimetro_m, " ml |\n",
-    "| **Distrito(s):** | ", paste(dat$distrito, collapse = ", "), " (Anta, Cusco) | **Ámbito PDU Anta:** | ", dat$pct_en_ambito, "% en ámbito |\n\n"
+    "| **Distrito(s):** | ", paste(dat$distrito, collapse = ", "), " (Anta, Cusco) | **Ámbito PDU Anta:** | ", dat$pct_en_ambito, "% en ámbito |\n",
+    "| **Servidumbre Eléctrica:** | ", if (dat$servidumbre_at == "No") "✓ Sin afectación" else dat$servidumbre_at, " | **Influencia Ferrocarril:** | ", if (dat$servidumbre_ffcc == "No") "✓ Sin proximidad" else dat$servidumbre_ffcc, " |\n\n"
   ))
 } else {
   cat(paste0(
     "| Parámetro | Detalle | Parámetro | Detalle |\n",
     "| :--- | :--- | :--- | :--- |\n",
     "| **Distrito:** | ", dat$distrito, " (Anta, Cusco) | **Ámbito PDU:** | ", dat$ambito_pdu, " |\n",
-    "| **Coordenadas UTM 18S:** | ", dat$coords_utm, " | **Coordenadas WGS84:** | ", dat$coords_geo, " |\n\n"
+    "| **Coordenadas UTM 18S:** | ", dat$coords_utm, " | **Coordenadas WGS84:** | ", dat$coords_geo, " |\n",
+    "| **Servidumbre Eléctrica:** | ", if (dat$servidumbre_at == "No") "✓ Sin afectación" else dat$servidumbre_at, " | **Influencia Ferrocarril:** | ", if (dat$servidumbre_ffcc == "No") "✓ Sin proximidad" else dat$servidumbre_ffcc, " |\n\n"
   ))
 }
 ```
@@ -236,15 +251,15 @@ sat <- dat$servidumbre_at
 sffcc <- dat$servidumbre_ffcc
 
 if (is.character(sat) && nzchar(sat) && sat != "No" && !grepl("Sin afectación", sat)) {
-  cat(paste0("- **⚠️ ALERTA DE SERVIDUMBRE ELÉCTRICA:** ", sat, "\n"))
+  cat(paste0("- **⚠️ ALERTA DE SERVIDUMBRE ELÉCTRICA (CNE):** ", sat, " — Restricción de seguridad: prohibida cualquier edificación dentro de la faja de servidumbre normativa.\n"))
 } else {
-  cat("- ✓ Sin afectación por fajas de servidumbre de líneas de alta tensión (CNE).\n")
+  cat("- ✓ **Sin afectación por fajas de servidumbre eléctrica:** El predio no se superpone a las fajas de seguridad de líneas de alta tensión (CNE).\n")
 }
 
 if (is.character(sffcc) && nzchar(sffcc) && sffcc != "No" && !grepl("Sin proximidad", sffcc)) {
-  cat(paste0("- **⚠️ ALERTA DE ZONA DE INFLUENCIA DEL FERROCARRIL:** ", sffcc, "\n"))
+  cat(paste0("- **⚠️ ALERTA DE ZONA DE INFLUENCIA FERROVIARIA (MTC):** ", sffcc, " — Requiere verificación y trámite de autorización ante el MTC y el concesionario ferroviario (D.S. 032-2005-MTC).\n"))
 } else {
-  cat("- ✓ Sin proximidad a la zona de influencia del ferrocarril (D.S. 032-2005-MTC).\n")
+  cat("- ✓ **Sin proximidad a zona de influencia ferroviaria:** El predio no se superpone a la faja ni al derecho de vía del ferrocarril (D.S. 032-2005-MTC).\n")
 }
 cat("\n")
 ```
@@ -324,7 +339,7 @@ if (!is.null(lp) && length(lp) > 0) {
 #v(1pt)
 #align(center)[
   #text(size: 6.0pt, fill: rgb("#64748B"))[
-    *Documento informativo y referencial.* Expedido por el Geovisor Oficial del Plan de Desarrollo Urbano de Anta (PDU 2024 - 2034) — Municipalidad Provincial de Anta.
+    *Ficha informativa y referencial.* Expedida por el Geovisor Oficial del Plan de Desarrollo Urbano de Anta (PDU 2024 - 2034) — Municipalidad Provincial de Anta.
   ]
 ]
 ```

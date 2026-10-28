@@ -93,7 +93,9 @@ quarto_disponible <- function() {
   candidatos <- c(
     file.path(Sys.getenv("LOCALAPPDATA"), "Programs", "Quarto", "bin", "quarto.exe"),
     file.path(Sys.getenv("ProgramFiles"), "Quarto", "bin", "quarto.exe"),
-    "C:/Program Files/Quarto/bin/quarto.exe"
+    "C:/Program Files/Quarto/bin/quarto.exe",
+    "C:/Program Files/RStudio/resources/app/bin/quarto/bin/quarto.exe",
+    "C:/Program Files/RStudio/bin/quarto/bin/quarto.exe"
   )
   candidatos <- candidatos[nzchar(candidatos) & file.exists(candidatos)]
   if (length(candidatos) > 0) {

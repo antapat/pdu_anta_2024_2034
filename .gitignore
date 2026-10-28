@@ -29,3 +29,4 @@ datos_supabase.R
 *.docx
 scratch/
 TOMO III_REGLAMENTO_2024-2034.docx
+**/*.quarto_ipynb
