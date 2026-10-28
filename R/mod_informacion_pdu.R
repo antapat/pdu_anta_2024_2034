@@ -134,15 +134,26 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
             class = "p-3 rounded-2",
             style = "background-color: #F0FDF4; border-left: 3.5px solid #16A34A;",
             tags$div(
-              class = "fw-bold small mb-1", style = "color: #166534;",
-              icon("circle-check"), " Alcance Institucional y Función del GeoVisor:"
+              class = "fw-bold small mb-2", style = "color: #166534; font-size: 0.92rem;",
+              icon("circle-check"), " Alcance Institucional y Función del GeoVisor Territorial"
             ),
             tags$p(
-              class = "small text-dark mb-0",
-              style = "line-height: 1.5;",
-              "Para sustentar la implementación del visor de la Municipalidad Provincial de Anta (MPA), se citan ambos artículos y se señala que ",
-              tags$b("el visor constituye un mecanismo de difusión y acceso público a la información territorial aprobada, sin sustituir la publicación oficial ni los documentos normativos correspondientes"),
-              ", facilitando el conocimiento ciudadano de los planos de zonificación y parámetros normativos."
+              class = "small text-dark mb-2",
+              style = "line-height: 1.6;",
+              "En concordancia con el marco normativo expuesto (D.S. N.º 012-2022-VIVIENDA y Ley N.º 31313 modif. por D. Leg. N.º 1674), el presente GeoVisor implementado por la ",
+              tags$b("Municipalidad Provincial de Anta"),
+              " se constituye como el canal oficial de ",
+              tags$b("difusión digital y libre acceso público continuo a la información territorial y urbanística aprobada"),
+              ". Su objetivo fundamental es garantizar la máxima transparencia en la gestión del suelo y facilitar a la ciudadanía, propietarios y profesionales la consulta ágil e interactiva de los planos cartográficos de zonificación, condicionantes territoriales y parámetros urbanísticos y edificatorios reglamentarios del PDU Anta (2024 - 2034)."
+            ),
+            tags$p(
+              class = "small text-muted mb-0",
+              style = "line-height: 1.5; font-size: 0.83rem;",
+              tags$i(
+                icon("shield-halved", class = "me-1 text-success"),
+                tags$strong("Precisión Institucional y Alcance Jurídico: "),
+                "La información accesible mediante esta plataforma tiene naturaleza técnica, informativa y de orientación ciudadana; no sustituye la publicación oficial en el Portal de Transparencia Estándar ni reemplaza los instrumentos normativos aprobados, ni convalida ni sustituye las licencias, certificados o procedimientos administrativos formales tramitados ante la Gerencia de Desarrollo Urbano y Rural (GDUR) y su Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial."
+              )
             )
           )
         ),

@@ -53,15 +53,24 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
 // Encabezado y Pie de página oficiales
 #set page(
   background: place(
-    center + horizon,
-    rotate(
-      -35deg,
-      text(
-        size: 46pt,
-        fill: rgb(180, 180, 180, 24%),
-        weight: "bold",
-        font: "Arial",
-        "DOCUMENTO INFORMATIVO"
+    top + left,
+    dx: -1.5cm,
+    dy: -1cm,
+    box(
+      width: 24cm,
+      height: 31cm,
+      grid(
+        columns: (1fr, 1fr),
+        rows: (1fr, 1fr, 1fr, 1fr),
+        align: center + horizon,
+        rotate(-30deg, text(size: 13.5pt, fill: rgb(180, 180, 180, 16%), weight: "bold", font: "Arial")[DOCUMENTO INFORMATIVO]),
+        rotate(-30deg, text(size: 13.5pt, fill: rgb(180, 180, 180, 16%), weight: "bold", font: "Arial")[DOCUMENTO INFORMATIVO]),
+        rotate(-30deg, text(size: 13.5pt, fill: rgb(180, 180, 180, 16%), weight: "bold", font: "Arial")[DOCUMENTO INFORMATIVO]),
+        rotate(-30deg, text(size: 13.5pt, fill: rgb(180, 180, 180, 16%), weight: "bold", font: "Arial")[DOCUMENTO INFORMATIVO]),
+        rotate(-30deg, text(size: 13.5pt, fill: rgb(180, 180, 180, 16%), weight: "bold", font: "Arial")[DOCUMENTO INFORMATIVO]),
+        rotate(-30deg, text(size: 13.5pt, fill: rgb(180, 180, 180, 16%), weight: "bold", font: "Arial")[DOCUMENTO INFORMATIVO]),
+        rotate(-30deg, text(size: 13.5pt, fill: rgb(180, 180, 180, 16%), weight: "bold", font: "Arial")[DOCUMENTO INFORMATIVO]),
+        rotate(-30deg, text(size: 13.5pt, fill: rgb(180, 180, 180, 16%), weight: "bold", font: "Arial")[DOCUMENTO INFORMATIVO])
       )
     )
   ),

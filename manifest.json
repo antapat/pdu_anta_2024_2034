@@ -3414,10 +3414,10 @@
   },
   "files": {
     "app.R": {
-      "checksum": "9de15190d803b1612dbb2a2c8692e89d"
+      "checksum": "5062eb11d0a3fee3de8b95dea5e1b1b0"
     },
     "constancia_pdu_template.qmd": {
-      "checksum": "c502fe1270aa8000f4ed4c4a27a3d0dc"
+      "checksum": "de46eab7bcb594ac378f4ecef63e0a02"
     },
     "data_pdu/pdu_capas.rds": {
       "checksum": "d1234daada2b81e43135b328b52a5129"
@@ -3435,7 +3435,7 @@
       "checksum": "1f25261cf595b4886306808c3b6742c7"
     },
     "R/mod_informacion_pdu.R": {
-      "checksum": "f6d0bc52b496705b0be9a26afe314261"
+      "checksum": "9b49b8fd58b0e3ac795e4348ac0f2202"
     },
     "R/mod_privacidad.R": {
       "checksum": "14c24720f2a7ed31778b3c0aa75d2dc6"

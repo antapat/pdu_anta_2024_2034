@@ -1403,9 +1403,9 @@ server <- function(input, output, session) {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(-35deg);
-        font-size: 52pt;
+        font-size: 36pt;
         font-weight: 800;
-        color: rgba(180, 180, 180, 0.16);
+        color: rgba(180, 180, 180, 0.14);
         white-space: nowrap;
         pointer-events: none;
         z-index: 50;
@@ -1460,7 +1460,7 @@ server <- function(input, output, session) {
         @page { size: A4 portrait; margin: 6mm 8mm 6mm 8mm; }
         body { margin: 0; padding: 0; }
         .cert-card { width: 100% !important; max-width: 100% !important; margin: 0; padding: 0; }
-        .cert-watermark { color: rgba(180, 180, 180, 0.20) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .cert-watermark { color: rgba(180, 180, 180, 0.16) !important; font-size: 34pt !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .cert-page { height: 284mm !important; max-height: 284mm !important; min-height: 284mm !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; page-break-after: always !important; page-break-inside: avoid !important; overflow: hidden !important; }
         .cert-page:last-child { page-break-after: auto !important; }
         .cert-page-body { flex-grow: 1; display: flex; flex-direction: column; }
