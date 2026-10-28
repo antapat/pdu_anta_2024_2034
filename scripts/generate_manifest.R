@@ -41,3 +41,4 @@ rsconnect::writeManifest(
 )
 
 cat("Manifest generado exitosamente. Existe manifest.json:", file.exists("manifest.json"), "\n")
+
