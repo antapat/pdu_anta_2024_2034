@@ -33,7 +33,6 @@ if (requireNamespace("pagedown", quietly = TRUE)) {
 
 options(shiny.maxRequestSize = 25 * 1024^2)
 source("R/spatial_utils.R", local = TRUE)
-if (file.exists("R/neon_utils.R")) source("R/neon_utils.R", local = TRUE)
 source("R/estilos_territoriales.R", local = TRUE)
 source("R/supabase_utils.R", local = TRUE)
 source("R/reglamento_utils.R", local = TRUE, encoding = "UTF-8")
@@ -2244,61 +2243,26 @@ server <- function(input, output, session) {
   # Tarjeta de diagnóstico de base de datos en la pestaña de Buzón
   output$ui_card_estado_supabase <- renderUI({
     info <- estado_supa()
-    es_local <- isTRUE(info$es_local) || info$modo %in% c("local", "offline")
-    modo_txt <- if (info$modo == "neon") {
-      "Neon Serverless PostgreSQL (PostGIS 3.4+)"
-    } else if (es_local) {
-      if (file.exists("data_pdu/pdu_capas.rds") && !file.exists("data/P_080301_Zonificacion_urbana.shp")) {
-        "Datos Optimizados Cloud (data_pdu/pdu_capas.rds)"
-      } else {
-        "Archivos Shapefiles locales (data/)"
-      }
-    } else if (info$modo == "postgres") {
-      "PostgreSQL Directo (Supabase - Deprecado)"
-    } else if (info$modo == "rest") {
-      "REST API (Supabase - Deprecado)"
-    } else {
-      "Modo Local"
-    }
-    
     tagList(
       div(
         class = "d-flex justify-content-between align-items-center py-1 border-bottom",
         span(class = "text-muted small", "Entorno de Datos:"),
-        if (info$modo == "neon") {
-          span(class = "badge bg-success", "🚀 Neon PostGIS Cloud")
-        } else if (es_local) {
-          span(class = "badge bg-primary", "💻 Local Activo")
-        } else if (isTRUE(info$conectado)) {
-          span(class = "badge bg-warning text-dark", "⚠️ Cloud Deprecado")
-        } else {
-          span(class = "badge bg-secondary", "⚪ Desconectado")
-        }
+        span(class = "badge bg-primary", "💻 Local Autónomo")
       ),
       div(
         class = "d-flex justify-content-between align-items-center py-1 border-bottom",
         span(class = "text-muted small", "Fuente Territorial:"),
-        span(class = "fw-bold small", modo_txt)
+        span(class = "fw-bold small", "Capas Shapefile y Datos Locales (data/)")
       ),
       div(
         class = "d-flex justify-content-between align-items-center py-1 border-bottom",
-        span(class = "text-muted small", "Estado Supabase:"),
-        span(class = "badge bg-light text-secondary border", "Deprecado (Migración a Neon)")
-      ),
-      if (!is.na(info$latencia_ms)) div(
-        class = "d-flex justify-content-between align-items-center py-1 border-bottom",
-        span(class = "text-muted small", "Latencia:"),
-        span(class = "badge bg-light text-dark", paste0(info$latencia_ms, " ms"))
+        span(class = "text-muted small", "Conexiones Externas:"),
+        span(class = "badge bg-success", "Desacoplado / Sin dependencia externa")
       ),
       div(
         class = "d-flex justify-content-between align-items-center py-1",
         span(class = "text-muted small", "Despliegue Institucional:"),
-        tags$a(
-          href = "https://connect.posit.cloud/patantampa",
-          target = "_blank",
-          class = "small fw-bold text-success text-decoration-none",
-          "connect.posit.cloud/patantampa ↗"
-        )
+        span(class = "badge bg-light text-dark", "Provincial Anta")
       )
     )
   })

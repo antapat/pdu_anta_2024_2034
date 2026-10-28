@@ -8,30 +8,12 @@ if (file.exists("R/estilos_territoriales.R")) {
 }
 
 pdu_cargar_datos <- function() {
-  fuente <- tolower(Sys.getenv("PDU_DATA_SOURCE", ""))
-  
-  # 1. Si se configuró explícitamente Neon o DATABASE_URL está presente
-  if (fuente == "neon" || nzchar(Sys.getenv("DATABASE_URL")) || nzchar(Sys.getenv("NEON_HOST"))) {
-    tryCatch({
-      if (file.exists("R/neon_utils.R")) source("R/neon_utils.R", local = TRUE)
-      return(neon_cargar_datos_espaciales())
-    }, error = function(e) {
-      warning("Fallo al conectar a Neon PostgreSQL, recurriendo a respaldo local: ", conditionMessage(e), call. = FALSE)
-    })
-  }
-  
-  # 2. Si se solicitó supabase legado
-  if (fuente == "supabase") {
-    warning("[DEPRECADO] La conexión directa a Supabase está marcada como obsoleta. Se migrará a Neon.", call. = FALSE)
-    return(supabase_cargar_datos_espaciales())
-  }
-  
-  # 3. Modo local explícito: si existen los shapefiles en data/
-  if (fuente %in% c("local", "offline", "") && file.exists("data/P_080301_Zonificacion_urbana.shp")) {
+  # 1. Modo local explícito: si existen los shapefiles en data/
+  if (file.exists("data/P_080301_Zonificacion_urbana.shp")) {
     return(pdu_cargar_datos_locales())
   }
   
-  # 4. Datos optimizados en data_pdu/ (para Posit Connect Cloud y GitHub)
+  # 2. Datos optimizados en data_pdu/
   for (cand in c("data_pdu/pdu_capas.rds", "../../data_pdu/pdu_capas.rds", "../data_pdu/pdu_capas.rds")) {
     if (file.exists(cand)) {
       d <- readRDS(cand)
@@ -39,13 +21,8 @@ pdu_cargar_datos <- function() {
     }
   }
   
-  # 5. Fallback a Neon si no hay datos locales en disco
-  tryCatch({
-    if (file.exists("R/neon_utils.R")) source("R/neon_utils.R", local = TRUE)
-    return(neon_cargar_datos_espaciales())
-  }, error = function(e) {
-    pdu_cargar_datos_locales()
-  })
+  # Fallback directo a carga local
+  pdu_cargar_datos_locales()
 }
 
 pdu_cargar_datos_locales <- function(directorio = "data") {
