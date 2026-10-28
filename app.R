@@ -75,10 +75,13 @@ FECHA_ACTUALIZACION_PDU <- "04 de septiembre del 2026"
 ORDENANZA_APROBACION_PDU <- "ORDENANZA MUNICIPAL Nº 04-2025-A-MPA/C"
 ORDENANZA_ACTUALIZACION_PDU <- "ORDENANZA MUNICIPAL N°008-2026-A-MPA-C"
 URL_EL_PERUANO_PDU <- "https://busquedas.elperuano.pe/dispositivo/NL/2407024-1"
+GERENCIA_OFICIAL <- "GERENCIA DE DESARROLLO URBANO Y RURAL"
+SUBGERENCIA_OFICIAL <- "SUB GERENCIA DE PLANEAMIENTO URBANO Y ACONDICIONAMIENTO TERRITORIAL"
+SUBGERENCIA_ROL <- "Órgano Ejecutor del Plan de Desarrollo Urbano (PDU Anta)"
 CARACTER_INFORMATIVO <- paste(
   "Ficha de carácter exclusivamente informativo. No constituye certificado oficial,",
   "no genera derechos urbanísticos ni reemplaza la verificación técnica municipal.",
-  "El certificado oficial debe tramitarse ante la Gerencia de Desarrollo Urbano y Rural",
+  "El certificado oficial debe tramitarse ante la Gerencia de Desarrollo Urbano y Rural y la Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial",
   "de la Municipalidad Provincial de Anta."
 )
 
@@ -109,7 +112,7 @@ ui <- page_navbar(
       # Fila 2: Subtítulo territorial institucional
       tags$small(
         class = "header-subtitle d-none d-md-inline-block",
-        "Municipalidad Provincial de Anta • Sistema de Información Territorial y Gestión Urbana"
+        "Municipalidad Provincial de Anta • GDUR — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor)"
       )
     )
   ),
@@ -284,7 +287,7 @@ ui <- page_navbar(
             </div>
             <div class=\"pdu-timeout-body\">
               <p class=\"pdu-timeout-custom-msg mb-2\">
-                Su sesión de consulta de <strong>5 minutos</strong> ha culminado con el fin de optimizar los recursos del servidor y garantizar un acceso fluido para toda la ciudadanía.
+                Su sesión de consulta de <strong>10 minutos</strong> ha culminado con el fin de optimizar los recursos del servidor y garantizar un acceso fluido para toda la ciudadanía.
               </p>
               <div class=\"pdu-timeout-callout\">
                 <i class=\"fa fa-circle-info text-success me-1\"></i>
@@ -399,7 +402,7 @@ ui <- page_navbar(
             div(class = "mt-3"),
             
             p(class = "small text-muted mb-2",
-              "Ingrese los vértices del predio o cargue un archivo para consultar la zonificación, las vías y las servidumbres."
+              "Ingrese los vértices del predio o cargue un archivo para consultar la zonificación urbana y las fajas de servidumbre normativas."
             ),
             
             radioButtons(
@@ -501,11 +504,11 @@ server <- function(input, output, session) {
   
   # ============================================================================
   # CONTROL DE TIEMPO DE CONSULTA (ETAPA 1 - GUÍA PDU ANTA)
-  # Duración fija de 300 segundos (5 minutos) por sesión con desconexión activa
+  # Duración fija de 600 segundos (10 minutos) por sesión con desconexión activa
   # ============================================================================
   session$allowReconnect(FALSE)
   
-  DURACION_SESION_SEG <- 300L
+  DURACION_SESION_SEG <- 600L
   tiempo_inicio_sesion <- Sys.time()
   tiempo_limite_sesion <- tiempo_inicio_sesion + DURACION_SESION_SEG
   
@@ -519,7 +522,7 @@ server <- function(input, output, session) {
     tryCatch({
       session$sendCustomMessage("pdu_session_expired", list(
         motivo = motivo,
-        mensaje = "Su tiempo de consulta de 5 minutos ha finalizado."
+        mensaje = "Su tiempo de consulta de 10 minutos ha finalizado."
       ))
     }, error = function(e) NULL)
     session$close()
@@ -581,7 +584,7 @@ server <- function(input, output, session) {
     span(
       id = "pdu_timer_chip",
       class = paste("timer-chip-pdu", clase_estado),
-      title = paste0("Tiempo restante de consulta: ", tiempo_formateado, " min (Límite: 5 minutos)"),
+      title = paste0("Tiempo restante de consulta: ", tiempo_formateado, " min (Límite: 10 minutos)"),
       icon(if (es_aviso) "triangle-exclamation" else "clock"),
       span(class = "timer-label d-none d-sm-inline", "Consulta:"),
       span(class = "timer-digits", tiempo_formateado)
@@ -598,48 +601,6 @@ server <- function(input, output, session) {
   # ----------------------------------------------------------------------------
   output$mapa_pdu <- renderLeaflet({
     zonif_bbox <- st_bbox(st_transform(capas$zonificacion, CRS_GEOGRAFICO))
-
-    paleta_categ <- if (!is.null(capas$colores_categ_vias)) {
-      capas$colores_categ_vias
-    } else if (exists("pdu_colores_categ_vias", mode = "function")) {
-      pdu_colores_categ_vias()
-    } else {
-      c(
-        "RED VIAL NACIONAL"       = "#C0392B",
-        "RED VIAL DEPARTAMENTAL"  = "#D97706",
-        "RED VIAL VECINAL"        = "#2E7D32",
-        "LOCAL"                   = "#5B7083"
-      )
-    }
-
-    trazos_svg <- c(
-      "RED VIAL NACIONAL"       = "<line x1='1' y1='4' x2='41' y2='4' stroke='#C0392B' stroke-width='2.8'/>",
-      "RED VIAL DEPARTAMENTAL"  = "<line x1='1' y1='4' x2='41' y2='4' stroke='#D97706' stroke-width='2.2'/>",
-      "RED VIAL VECINAL"        = "<line x1='1' y1='4' x2='41' y2='4' stroke='#2E7D32' stroke-width='1.8' stroke-dasharray='7 4'/>",
-      "LOCAL"                   = "<line x1='1' y1='4' x2='41' y2='4' stroke='#5B7083' stroke-width='1.4'/>"
-    )
-
-    items_leyenda <- vapply(names(paleta_categ), function(cat_nombre) {
-      svg_line <- trazos_svg[[cat_nombre]]
-      if (is.null(svg_line) || is.na(svg_line)) {
-        col <- paleta_categ[[cat_nombre]]
-        svg_line <- paste0("<line x1='1' y1='4' x2='41' y2='4' stroke='", col, "' stroke-width='2'/>")
-      }
-      paste0(
-        "<div class='leyenda-vial__item'>",
-        "<svg viewBox='0 0 42 8' aria-hidden='true'>", svg_line, "</svg>",
-        "<span>", htmltools::htmlEscape(cat_nombre), "</span>",
-        "</div>"
-      )
-    }, character(1))
-
-    leyenda_vias_html <- paste0(
-      "<div class='leyenda-vial'>",
-      "<div class='leyenda-vial__titulo'>Sistema vial propuesto</div>",
-      "<div class='leyenda-vial__subtitulo'>Categor&iacute;a de v&iacute;as</div>",
-      paste(items_leyenda, collapse = ""),
-      "</div>"
-    )
 
     leaflet() %>%
       addProviderTiles(providers$OpenStreetMap, group = "OpenStreetMap") %>%
@@ -759,39 +720,7 @@ server <- function(input, output, session) {
         )
       ) %>%
       
-      # 8. Sistema Vial Propuesto
-      addPolylines(
-        data = capas$vias,
-        group = "Sistema Vial Propuesto",
-        color = ~COLOR_MAPA,
-        weight = ~PESO_MAPA,
-        dashArray = ~TRAZO_MAPA,
-        opacity = 0.90,
-        label = ~ifelse(COD_VIA_PR == "Sin código",
-                        paste0(CATEG_VIA, ": ", SIS_VIAL, " (SV: ", SECCION_VI, ")"),
-                        paste0(COD_VIA_PR, " — ", CATEG_VIA, ": ", SIS_VIAL, " (SV: ", SECCION_VI, ")")),
-        popup = ~paste0(
-          "<div style='font-size:13px; font-family:Inter, sans-serif;'>",
-          "<div style='background:#174A3A; color:white; padding:5px 9px; font-weight:bold; border-radius:5px;'>SISTEMA VIAL PROPUESTO</div>",
-          "<div style='padding:6px 2px;'>",
-          "<b>Categoría Vial:</b> <span style='color:#174A3A; font-weight:bold;'>", htmltools::htmlEscape(CATEG_VIA), "</span><br>",
-          "<b>Jerarquía Local:</b> ", htmltools::htmlEscape(SIS_VIAL), "<br>",
-          "<b>Código de Vía:</b> ", ifelse(COD_VIA_PR == "Sin código", "<span style='color:#66736D; font-style:italic;'>No asignado en cartografía</span>", paste0("<span style='color:#174A3A; font-weight:bold;'>", htmltools::htmlEscape(COD_VIA_PR), "</span>")), "<br>",
-          "<b>Sección Vial Normativa (SV):</b> <span style='background:#FBF7EB; color:#86651F; padding:2px 6px; font-weight:bold; border:1px solid #B68A2C; border-radius:3px;'>", htmltools::htmlEscape(SECCION_VI), "</span>",
-          "</div></div>"
-        ),
-        highlightOptions = highlightOptions(
-          weight = 3.2,
-          color = "#F1C75B",
-          bringToFront = TRUE
-        )
-      ) %>%
 
-      addControl(
-        html = htmltools::HTML(leyenda_vias_html),
-        position = "bottomright",
-        className = "leyenda-vial-shell"
-      ) %>%
       
       addEasyButton(easyButton(
         icon = "fa-crosshairs", title = "Mi Ubicación Actual (GPS)",
@@ -811,7 +740,7 @@ server <- function(input, output, session) {
       addLayersControl(
         baseGroups = c("OpenStreetMap", "Satélite", "Topográfico"),
         overlayGroups = c(
-          "Zonificación PDU", "Sistema Vial Propuesto", "Ámbito PDU Anta",
+          "Zonificación PDU", "Ámbito PDU Anta",
           "Servidumbre Alta Tensión", "Líneas de Alta Tensión",
           "Zona de influencia del ferrocarril", "Vía Férrea (Tren)"
         ),
@@ -1575,7 +1504,7 @@ server <- function(input, output, session) {
             style = "vertical-align:middle; padding-left:12px; border:none;",
             tags$div(class = "header-title", "MUNICIPALIDAD PROVINCIAL DE ANTA"),
             tags$div(class = "header-subtitle", if (modo == "punto") "REPORTE INFORMATIVO — PDU ANTA 2024 - 2034" else "REPORTE INFORMATIVO DE PARÁMETROS URBANÍSTICOS Y ZONIFICACIÓN"),
-            tags$div(class = "header-meta", paste("Consulta:", codigo_consulta, "|", fecha_consulta_str, "| Gerencia de Desarrollo Urbano y Rural"))
+            tags$div(class = "header-meta", paste("Consulta:", codigo_consulta, "|", fecha_consulta_str, "| GDUR — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor)"))
           ),
           tags$td(
             style = "width:75px; text-align:right; vertical-align:middle; border:none; padding:0;",
@@ -1599,7 +1528,7 @@ server <- function(input, output, session) {
             style = "vertical-align:middle; padding-left:12px; border:none;",
             tags$div(class = "header-title", style = "font-size: 1.02rem;", "MUNICIPALIDAD PROVINCIAL DE ANTA"),
             tags$div(class = "header-subtitle", style = "font-size: 0.80rem;", if (modo == "punto") "REPORTE INFORMATIVO — FICHA TÉCNICA Y PARÁMETROS URBANÍSTICOS" else "REPORTE INFORMATIVO — FICHA TÉCNICA NORMATIVA DE PREDIO"),
-            tags$div(class = "header-meta", style = "font-size: 0.68rem;", paste("PDU Anta 2024 - 2034 • Consulta:", codigo_consulta, "•", fecha_consulta_str, "• Gerencia de Desarrollo Urbano y Rural"))
+            tags$div(class = "header-meta", style = "font-size: 0.68rem;", paste("PDU Anta 2024 - 2034 • GDUR — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor) • Consulta:", codigo_consulta))
           ),
           tags$td(
             style = "width:65px; text-align:right; vertical-align:middle; border:none; padding:0;",
@@ -1612,14 +1541,14 @@ server <- function(input, output, session) {
     # Pie de página institucional numerado para Página 1
     footer_p1 <- div(
       class = "cert-footer",
-      div(class = "cert-footer-left", tags$b("Municipalidad Provincial de Anta"), " — Gerencia de Desarrollo Urbano y Rural | Sistema de Información Territorial PDU Anta (2024 - 2034)"),
+      div(class = "cert-footer-left", tags$b("Municipalidad Provincial de Anta"), " — GDUR | Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor) | PDU Anta 2024 - 2034"),
       div(class = "cert-footer-right", tags$b("Página 1 de 2"))
     )
     
     # Pie de página institucional numerado para Página 2
     footer_p2 <- div(
       class = "cert-footer",
-      div(class = "cert-footer-left", tags$b("Municipalidad Provincial de Anta"), " — Gerencia de Desarrollo Urbano y Rural | Sistema de Información Territorial PDU Anta (2024 - 2034)"),
+      div(class = "cert-footer-left", tags$b("Municipalidad Provincial de Anta"), " — GDUR | Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor) | PDU Anta 2024 - 2034"),
       div(class = "cert-footer-right", tags$b("Página 2 de 2"))
     )
     

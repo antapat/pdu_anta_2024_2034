@@ -76,8 +76,9 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
       ],
       [
         #text(weight: "bold", size: 8.5pt, fill: rgb("#006633"))[MUNICIPALIDAD PROVINCIAL DE ANTA]\
-        #text(weight: "bold", size: 7.2pt, fill: rgb("#B88808"))[GERENCIA DE DESARROLLO URBANO Y RURAL]\
-        #text(size: 6.8pt, fill: rgb("#334155"))[SISTEMA DE INFORMACIÓN TERRITORIAL — GEOVISOR PDU ANTA (2024 - 2034)]
+        #text(weight: "bold", size: 7.0pt, fill: rgb("#B88808"))[GERENCIA DE DESARROLLO URBANO Y RURAL]\
+        #text(weight: "bold", size: 6.5pt, fill: rgb("#006633"))[SUB GERENCIA DE PLANEAMIENTO URBANO Y ACONDICIONAMIENTO TERRITORIAL]\
+        #text(size: 6.0pt, fill: rgb("#334155"))[Órgano Ejecutor del Plan de Desarrollo Urbano — PDU Anta (2024 - 2034)]
       ],
       [
         #if "`r logo_pdu_rel`" != "" [
@@ -95,8 +96,8 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
       columns: (1fr, auto),
       align: (left + horizon, right + horizon),
       [
-        #text(size: 6.5pt, fill: rgb("#64748B"))[
-          *Municipalidad Provincial de Anta* — Gerencia de Desarrollo Urbano y Rural | *Ficha:* `r dat$fecha_hora` | *Cód:* `r dat$codigo_consulta`
+        #text(size: 6.1pt, fill: rgb("#64748B"))[
+          *Municipalidad Provincial de Anta* — GDUR | *Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial* | *Ficha:* `r dat$fecha_hora` | *Cód:* `r dat$codigo_consulta`
         ]
       ],
       [
@@ -320,7 +321,6 @@ if (!is.null(lp) && length(lp) > 0) {
     cat(sprintf("| **Área Libre Mínima (%%):** | %s |\n", pdu_md(p$AREA_LIBRE_MIN)))
     cat(sprintf("| **Coeficiente de Edificación:** | %s |\n", pdu_md(p$COEFICIENTE_EDIF)))
     cat(sprintf("| **Retiro Frontal Obligatorio:** | %s |\n", pdu_md(p$RETIRO_FRONTAL)))
-    cat(sprintf("| **Estado de Validación:** | %s |\n", pdu_md(p$ESTADO_VALIDACION)))
     cat(sprintf("| **Usos Permitidos y Compatibles:** | %s |\n", pdu_md(p$USOS_PERMITIDOS)))
     campos <- pdu_campos_adicionales_reglamento(p)
     for (campo in names(campos)) {
@@ -339,7 +339,7 @@ if (!is.null(lp) && length(lp) > 0) {
 #v(1pt)
 #align(center)[
   #text(size: 6.0pt, fill: rgb("#64748B"))[
-    *Ficha informativa y referencial.* Expedida por el Geovisor Oficial del Plan de Desarrollo Urbano de Anta (PDU 2024 - 2034) — Municipalidad Provincial de Anta.
+    *Ficha informativa y referencial.* Expedida por el Geovisor Oficial del Plan de Desarrollo Urbano de Anta (PDU 2024 - 2034) — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (GDUR) — Municipalidad Provincial de Anta.
   ]
 ]
 ```

@@ -30,7 +30,7 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
             img(src = "escudo_muni_anta.png", style = "height: 65px; width: auto; background: white; padding: 4px; border-radius: 8px;", alt = "Escudo Anta"),
             div(
               tags$h3(class = "fw-bold mb-1 text-white", "PLAN DE DESARROLLO URBANO DE ANTA (2024 - 2034)"),
-              tags$h6(class = "mb-2", style = "color: #E2E8F0;", "Municipalidad Provincial de Anta — Gestión Territorial y Desarrollo Urbano Sostenible"),
+              tags$h6(class = "mb-2", style = "color: #E2E8F0;", "Municipalidad Provincial de Anta — GDUR • Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor)"),
               div(
                 class = "d-flex flex-wrap gap-2 mt-2",
                 span(class = "badge", style = "background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); font-size: 0.78rem;", icon("calendar-days"), " Vigencia: 2024 - 2034"),
@@ -60,6 +60,23 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
             class = "mb-0 fw-bold",
             style = "color: #1E293B; font-size: 1.12rem; line-height: 1.5; font-weight: 700; text-align: justify; text-align-last: center; text-justify: inter-word; max-width: 920px; margin-left: auto; margin-right: auto;",
             paste0("«", proyecto_nombre, "»")
+          )
+        ),
+        
+        # ÓRGANO EJECUTOR INSTITUCIONAL DEL PDU
+        div(
+          class = "card p-3 p-sm-4 mb-4 shadow-sm border-0",
+          style = "background-color: #F0FDF4; border-left: 4px solid #16A34A !important; border-radius: var(--radius-md);",
+          div(
+            class = "d-flex align-items-center gap-3",
+            icon("building-columns", class = "fs-2 text-success"),
+            div(
+              tags$h6(class = "fw-bold text-success mb-1 text-uppercase", style = "letter-spacing: 0.5px;", "Órgano Ejecutor del Plan de Desarrollo Urbano:"),
+              tags$h5(class = "fw-bold text-dark mb-1", "Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial"),
+              tags$p(class = "small text-muted mb-0",
+                "Unidad orgánica ejecutora de la Gerencia de Desarrollo Urbano y Rural (GDUR), responsable directa de la conducción, administración técnica, zonificación, emisión de fichas informativas y monitoreo del PDU Anta (2024 - 2034)."
+              )
+            )
           )
         ),
         
