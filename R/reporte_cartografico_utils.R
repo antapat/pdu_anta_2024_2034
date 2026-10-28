@@ -147,7 +147,7 @@ generar_mapa_certificado <- function(geom_sf, es_poligono = TRUE, ruta_salida_pn
     
     # 3b. Ámbito PDU
     if (nrow(ambito_crop) > 0) {
-      p <- p + geom_sf(data = ambito_crop, fill = NA, color = "#174A3A", linetype = "dashed", linewidth = 0.9)
+      p <- p + geom_sf(data = ambito_crop, fill = NA, color = "#D32F2F", linetype = "dashed", linewidth = 1.0)
     }
     
     # 4. Predio / Punto consultado (Destacado en rojo institucional)

@@ -610,15 +610,16 @@ server <- function(input, output, session) {
       
 
       
-      # 2. Ámbito PDU
+      # 2. Ámbito PDU (color rojo resaltante para máxima visibilidad)
       addPolygons(
         data = capas$ambito,
         group = "Ámbito PDU Anta",
-        fillColor = "#8FAE9B",
-        fillOpacity = 0.05,
-        color = "#174A3A",
-        weight = 2.2,
-        dashArray = "10, 6",
+        fillColor = "#FFCDD2",
+        fillOpacity = 0.08,
+        color = "#D32F2F",
+        weight = 3.5,
+        opacity = 1.0,
+        dashArray = "8, 5",
         label = ~paste("Ámbito PDU Anta -", NOM_AI)
       ) %>%
       
@@ -1671,7 +1672,7 @@ server <- function(input, output, session) {
                     tags$tr(tags$th("Ámbito PDU Anta:"), tags$td(if (!ambito_disponible) "No disponible" else if (en_ambito) "Dentro del ámbito reglamentado" else "Fuera del ámbito reglamentado"))
                   )
                 ),
-                                tags$div(class = "section-heading", "2. ZONIFICACIÓN Y PARÁMETROS URBANÍSTICOS"),
+                                tags$div(class = "section-heading", "3. ZONIFICACIÓN Y PARÁMETROS URBANÍSTICOS"),
                 tags$table(
                   class = "table-cert mb-2",
                   tags$tbody(
@@ -1693,7 +1694,7 @@ server <- function(input, output, session) {
                   div(class = "alert alert-warning", "El punto intersecta varias subzonas. Verifique el límite cartográfico; se incluyen todas las fichas aplicables."),
                   lapply(pdu_buscar_parametros(df_parametros, setdiff(capas$zonificacion$COD_S_ZONA[idx_zonif_punto], cod_s_zona)), pdu_tabla_parametros)
                 ),
-                tags$div(class = "section-heading", "3. AFECTACIONES DE INFRAESTRUCTURA"),
+                tags$div(class = "section-heading", "4. AFECTACIONES DE INFRAESTRUCTURA"),
                 tags$ul(
                   class = "cert-list",
                   tags$li(if (en_serv_at) tags$b(class = "text-danger", "⚠️ AFECTACIÓN POR FAJA DE SERVIDUMBRE DE ALTA TENSIÓN (CNE). Prohibida edificación.") else "✓ Sin afectación por fajas de alta tensión."),
