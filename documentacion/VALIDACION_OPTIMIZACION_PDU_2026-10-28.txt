@@ -1,0 +1,13 @@
+Validacion de optimizaciones PDU - 2026-10-28
+Widget original: 14437729 bytes JSON
+Widget optimizado: 8876684 bytes JSON
+Reduccion: 38.52%
+Arranque con cache: 1.17 segundos
+Pruebas de optimizacion, normativa y utilidades espaciales: aprobadas.
+Suite completa: fallo preexistente en test-datos-locales.R; usa mensaje= pero la funcion recibe contenido=.
+Arranque de paquete sin data/ ni .Renviron: aprobado.
+No se ha publicado ni modificado el servicio remoto.
+JSON del widget: no equivale al trafico HTTP comprimido por visita.
+Verificacion en navegador: mapa dibujado y consulta UTM 806050 / 8510700 respondida.
+Servidor local temporal de pruebas: detenido.
+Firma del paquete sin shapefiles tras endurecer invalidacion: valida.

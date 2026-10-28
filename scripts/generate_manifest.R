@@ -40,18 +40,23 @@ app_files <- c(
   "R/spatial_utils.R",
   "R/estilos_territoriales.R",
   "R/local_data.R",
+  "R/optimizacion.R",
   "R/reporte_cartografico_utils.R",
   "R/reglamento_utils.R",
   "R/supabase_utils.R",
   "R/mod_privacidad.R",
   "R/mod_informacion_pdu.R",
   "R/mod_catalogo_zonas.R",
-  "data_pdu/pdu_capas.rds",
+  "data_pdu/pdu_preparado.rds",
   "www/custom.css",
   "www/escudo_muni_anta.png",
   "www/pdu_actualizado_sf.png"
 )
 
+# El despliegue requiere una cache vigente; nunca publicar un RDS antiguo.
+source("scripts/preparar_cache_pdu.R", encoding = "UTF-8")
+app_files <- unique(c(app_files, list.files("normativa", recursive = TRUE, full.names = TRUE),
+                     list.files("aprobacion", recursive = TRUE, full.names = TRUE)))
 app_files_exist <- app_files[file.exists(app_files)]
 
 rsconnect::writeManifest(

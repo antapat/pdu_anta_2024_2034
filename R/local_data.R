@@ -8,6 +8,11 @@ if (file.exists("R/estilos_territoriales.R")) {
 }
 
 pdu_cargar_datos <- function() {
+  # Solo aceptar datos preparados cuya firma coincida con las fuentes presentes.
+  if (exists("pdu_leer_cache", mode = "function")) {
+    preparados <- pdu_leer_cache()
+    if (!is.null(preparados)) return(preparados)
+  }
   # 1. Modo local explícito: si existen los shapefiles en data/
   if (file.exists("data/P_080301_Zonificacion_urbana.shp")) {
     return(pdu_cargar_datos_locales())

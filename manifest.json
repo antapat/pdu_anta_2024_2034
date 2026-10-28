@@ -3414,22 +3414,52 @@
   },
   "files": {
     "app.R": {
-      "checksum": "97ae91e39080124c717a9e5f009c1887"
+      "checksum": "65c099a0304044e92f5be65bb6dde376"
+    },
+    "aprobacion/ORDENANZA MUNICIPAL N004-2025-A-MPA-C.pdf": {
+      "checksum": "e0e85b5cae21688b7102b44bb13b7943"
+    },
+    "aprobacion/ORDENANZA MUNICIPAL N004-2025-A-MPA-C_EL_PERUANO.pdf": {
+      "checksum": "0f9b3f5866f003457746e9c69842ef63"
+    },
+    "aprobacion/ORDENANZA MUNICIPAL N008-2026-A-MPA-C.pdf": {
+      "checksum": "5b129750ddcf23d5df21dd038075b09b"
     },
     "constancia_pdu_template.qmd": {
       "checksum": "de46eab7bcb594ac378f4ecef63e0a02"
     },
-    "data_pdu/pdu_capas.rds": {
-      "checksum": "d1234daada2b81e43135b328b52a5129"
+    "data_pdu/pdu_preparado.rds": {
+      "checksum": "6f41fce5226f4494120ac89e22b12f64"
     },
     "DESCRIPTION": {
       "checksum": "04727981720d1ec23b4e23af9b2bd2f6"
+    },
+    "normativa/1976352-2.pdf": {
+      "checksum": "c28eaee6fd6a0e046dd37d9146ac278e"
+    },
+    "normativa/Decreto-Legislativo-1674-LPDerecho.pdf": {
+      "checksum": "ad67f269640dc425409cc53138d92a60"
+    },
+    "normativa/DECRETO SUPREMO 012-2022-VIVIENDA.pdf.pdf": {
+      "checksum": "2fc49c07989b56946f3fd15fc5df42cc"
+    },
+    "normativa/matriz_reglamento_final.csv": {
+      "checksum": "e9a3a2b8ebfb506047b653d1241f198c"
+    },
+    "normativa/README_MATRIZ_REGLAMENTO.md": {
+      "checksum": "9f9fd0c7092b1b3c5e5833e1eeffb63c"
+    },
+    "normativa/RESUMEN_PLANIFICACION_URBANA.md": {
+      "checksum": "522305f1b69d704aef6d9d1c7c04bfb6"
+    },
+    "normativa/vinculo_zonificacion_reglamento.csv": {
+      "checksum": "0dffeee08918c9542139502d470ace61"
     },
     "R/estilos_territoriales.R": {
       "checksum": "9ff383b10a94f40b556424123ed43ec5"
     },
     "R/local_data.R": {
-      "checksum": "a782f05180a6b863d30140fbfa94d587"
+      "checksum": "83e4ce41b031bff3289d305c6b086ba8"
     },
     "R/mod_catalogo_zonas.R": {
       "checksum": "1f25261cf595b4886306808c3b6742c7"
@@ -3439,6 +3469,9 @@
     },
     "R/mod_privacidad.R": {
       "checksum": "14c24720f2a7ed31778b3c0aa75d2dc6"
+    },
+    "R/optimizacion.R": {
+      "checksum": "7f0f70aac29648bfad9fa17dc020c1ac"
     },
     "R/reglamento_utils.R": {
       "checksum": "b86322d1d92f7fa797b0b77b83ceb762"

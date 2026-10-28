@@ -37,6 +37,7 @@ source("R/estilos_territoriales.R", local = TRUE)
 source("R/supabase_utils.R", local = TRUE)
 source("R/reglamento_utils.R", local = TRUE, encoding = "UTF-8")
 source("R/local_data.R", local = TRUE)
+source("R/optimizacion.R", local = TRUE)
 source("R/reporte_cartografico_utils.R", local = TRUE)
 source("R/mod_privacidad.R", local = TRUE)
 source("R/mod_informacion_pdu.R", local = TRUE)
@@ -55,6 +56,11 @@ datos_pdu <- datos_supabase <- pdu_cargar_datos()
 ambito_disponible <- nrow(datos_supabase$capas$ambito) > 0
 if (!is.null(datos_supabase$aviso)) message(datos_supabase$aviso)
 capas <- datos_supabase$capas
+# Solo el dibujo usa copias ligeras. Consultas, areas y reportes conservan precision.
+capas_mapa <- datos_pdu$capas_mapa
+if (is.null(capas_mapa)) capas_mapa <- pdu_capas_visualizacion(capas)
+zonificacion_bbox <- st_bbox(capas$zonificacion)
+vias_utm_compartidas <- st_transform(capas$vias, 32718)
 df_parametros <- datos_supabase$parametros
 message(
   "GeoVisor iniciado con fuente espacial ", datos_supabase$origen, ": ",
@@ -85,6 +91,207 @@ CARACTER_INFORMATIVO <- paste(
   "previstos en la normativa vigente. Todo trámite oficial o expedición de certificados debe gestionarse",
   "formalmente ante la Gerencia de Desarrollo Urbano y Rural — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial."
 )
+
+# El widget estatico se construye una vez por proceso, no por visitante.
+mapa_pdu_compartido <- local({
+    zonif_bbox <- zonificacion_bbox
+
+    leaflet(options = leafletOptions(preferCanvas = TRUE)) %>%
+      addProviderTiles(providers$OpenStreetMap, group = "OpenStreetMap") %>%
+      addProviderTiles(providers$Esri.WorldImagery, group = "Satélite") %>%
+      addProviderTiles(providers$Esri.WorldTopoMap, group = "Topográfico") %>%
+      
+
+      
+      # 2. Ámbito PDU (color rojo resaltante para máxima visibilidad)
+      addPolygons(
+        data = capas_mapa$ambito,
+        group = "Ámbito PDU Anta",
+        fillColor = "#FFCDD2",
+        fillOpacity = 0.08,
+        color = "#D32F2F",
+        weight = 3.5,
+        opacity = 1.0,
+        dashArray = "8, 5",
+        label = ~paste("Ámbito PDU Anta -", NOM_AI)
+      ) %>%
+      
+      # 3. Servidumbre Alta Tensión
+      addPolygons(
+        data = capas_mapa$alta_tension_buffer,
+        group = "Servidumbre Alta Tensión",
+        fillColor = "#D6A43A",
+        fillOpacity = 0.24,
+        color = "#A23E3A",
+        weight = 0.9,
+        label = ~paste("Faja de Servidumbre Eléctrica:", TENS_NOMIN, "kV"),
+        popup = ~paste0(
+          "<div style='font-size:12px; font-family:Inter, sans-serif; min-width:210px;'>",
+          "<div style='background:#A23E3A; color:white; padding:5px 8px; font-weight:bold; border-radius:4px 4px 0 0;'>FAJA DE SERVIDUMBRE ELÉCTRICA</div>",
+          "<div style='padding:6px;'>",
+          "<b>Nivel de Tensión:</b> ", htmltools::htmlEscape(TENS_NOMIN), " kV<br>",
+          "<b>Empresa:</b> ", htmltools::htmlEscape(NOM_EMPRES), "<br>",
+          "<div style='margin-top:4px; font-size:11px; color:#A23E3A; font-weight:600;'>Área con restricción de edificación (CNE)</div>",
+          "</div></div>"
+        )
+      ) %>%
+      
+      # 4. Líneas Alta Tensión
+      addPolylines(
+        data = capas_mapa$alta_tension,
+        group = "Líneas de Alta Tensión",
+        color = "#A23E3A",
+        weight = 1.8,
+        opacity = 0.85,
+        dashArray = "8, 5",
+        label = ~paste("Línea AT:", NOM_EMPRES, "-", TENS_NOMIN),
+        popup = ~paste0(
+          "<div style='font-size:12px; font-family:Inter, sans-serif; min-width:210px;'>",
+          "<div style='background:#A23E3A; color:white; padding:5px 8px; font-weight:bold; border-radius:4px 4px 0 0;'>LÍNEA DE ALTA TENSIÓN</div>",
+          "<div style='padding:6px;'>",
+          "<b>Línea:</b> ", htmltools::htmlEscape(NOM_LINEA), "<br>",
+          "<b>Empresa:</b> ", htmltools::htmlEscape(NOM_EMPRES), "<br>",
+          "<b>Tensión:</b> ", htmltools::htmlEscape(TENS_NOMIN), " kV",
+          "</div></div>"
+        )
+      ) %>%
+      
+      # 5. Servidumbre Ferrocarril
+      addPolygons(
+        data = capas_mapa$ferrocarril_buffer,
+        group = "Zona de influencia del ferrocarril",
+        fillColor = "#8B7AA8",
+        fillOpacity = 0.20,
+        color = "#6B5A88",
+        weight = 0.9,
+        label = ~"Zona de influencia del ferrocarril (15 m por lado; requiere verificación sectorial)",
+        popup = ~paste0(
+          "<div style='font-size:12px; font-family:Inter, sans-serif; min-width:220px;'>",
+          "<div style='background:#6B5A88; color:white; padding:5px 8px; font-weight:bold; border-radius:4px 4px 0 0;'>ZONA DE INFLUENCIA DEL FERROCARRIL</div>",
+          "<div style='padding:6px;'>",
+          "<b>Faja de Seguridad:</b> 15 m por lado respecto al eje.<br>",
+          "<b>Normativa:</b> D.S. 032-2005-MTC.<br>",
+          "<div style='margin-top:4px; font-size:11px; color:#6B5A88;'>Verificar derecho de vía con el MTC y concesionario.</div>",
+          "</div></div>"
+        )
+      ) %>%
+      
+      # 6. Vía Férrea
+      addPolylines(
+        data = capas_mapa$ferrocarril,
+        group = "Vía Férrea (Tren)",
+        color = "#3F4844",
+        weight = 2.1,
+        opacity = 0.88,
+        dashArray = "7, 5",
+        label = ~paste("Ferrocarril:", NOM_FERR, "-", TRAMO_FERR),
+        popup = ~paste0(
+          "<div style='font-size:12px; font-family:Inter, sans-serif; min-width:200px;'>",
+          "<div style='background:#3F4844; color:white; padding:5px 8px; font-weight:bold; border-radius:4px 4px 0 0;'>RED FERROVIARIA</div>",
+          "<div style='padding:6px;'>",
+          "<b>Ferrocarril:</b> ", htmltools::htmlEscape(NOM_FERR), "<br>",
+          "<b>Tramo:</b> ", htmltools::htmlEscape(TRAMO_FERR), "<br>",
+          "<b>Administrador:</b> ", htmltools::htmlEscape(ADM_FERR),
+          "</div></div>"
+        )
+      ) %>%
+      
+      # 7. Zonificación PDU
+      addPolygons(
+        data = capas_mapa$zonificacion,
+        group = "Zonificación PDU",
+        fillColor = ~COLOR_MAPA,
+        fillOpacity = 0.60,
+        color = ~COLOR_MAPA,
+        opacity = 0.88,
+        weight = 0.8,
+        label = ~paste0(COD_S_ZONA, ": ", NOMBRE_COMPLETO),
+        popup = ~POPUP_MAPA,
+        highlightOptions = highlightOptions(
+          weight = 2.2,
+          color = "#F1C75B",
+          fillOpacity = 0.82,
+          bringToFront = FALSE
+        )
+      ) %>%
+      
+
+      
+      addEasyButton(easyButton(
+        icon = "fa-crosshairs", title = "Mi Ubicación Actual (GPS)",
+        position = "topleft",
+        onClick = JS("function(btn, map){ obtenerUbicacionGPS(); }")
+      )) %>%
+      addEasyButton(easyButton(
+        icon = "fa-expand", title = "Ajustar vista a Zonificación PDU",
+        position = "topleft",
+        onClick = JS(sprintf(
+          "function(btn, map){ map.invalidateSize(); map.fitBounds([[%f, %f], [%f, %f]], {padding: [12, 12], maxZoom: 16}); }",
+          unname(zonif_bbox["ymin"]), unname(zonif_bbox["xmin"]),
+          unname(zonif_bbox["ymax"]), unname(zonif_bbox["xmax"])
+        ))
+      )) %>%
+      
+      addLayersControl(
+        baseGroups = c("OpenStreetMap", "Satélite", "Topográfico"),
+        overlayGroups = c(
+          "Zonificación PDU", "Ámbito PDU Anta",
+          "Servidumbre Alta Tensión", "Líneas de Alta Tensión",
+          "Zona de influencia del ferrocarril", "Vía Férrea (Tren)"
+        ),
+        options = layersControlOptions(collapsed = TRUE)
+      ) %>%
+      
+      fitBounds(
+        lng1 = unname(zonif_bbox["xmin"]),
+        lat1 = unname(zonif_bbox["ymin"]),
+        lng2 = unname(zonif_bbox["xmax"]),
+        lat2 = unname(zonif_bbox["ymax"])
+      ) %>%
+      
+      htmlwidgets::onRender(sprintf("
+        function(el, x) {
+          var map = this;
+          var zonifBounds = [[%f, %f], [%f, %f]];
+          
+          function enfocarZonificacionMobile() {
+            if (!map) return;
+            map.invalidateSize();
+            map.fitBounds(zonifBounds, {
+              padding: [15, 15],
+              maxZoom: 16,
+              animate: false
+            });
+          }
+          
+          // Re-intentos escalonados conforme el viewport móvil calcula el 100dvh y el layout se estabiliza
+          setTimeout(enfocarZonificacionMobile, 150);
+          setTimeout(enfocarZonificacionMobile, 600);
+          setTimeout(enfocarZonificacionMobile, 1400);
+          
+          // Soporte ante giros de pantalla (portrait/landscape) y redimensionamiento
+          window.addEventListener('resize', function() {
+            map.invalidateSize();
+          });
+          window.addEventListener('orientationchange', function() {
+            setTimeout(enfocarZonificacionMobile, 350);
+          });
+          
+          // Re-ajustar al cambiar de pestaña en Bootstrap
+          document.addEventListener('shown.bs.tab', function() {
+            setTimeout(enfocarZonificacionMobile, 200);
+          });
+          
+          // Re-ajustar si el usuario colapsa o despliega el sidebar de bslib
+          document.addEventListener('bslib.sidebar.toggle', function() {
+            setTimeout(enfocarZonificacionMobile, 350);
+          });
+        }
+      ",
+      unname(zonif_bbox["ymin"]), unname(zonif_bbox["xmin"]),
+      unname(zonif_bbox["ymax"]), unname(zonif_bbox["xmax"])
+      ))
+})
 
 # ------------------------------------------------------------------------------
 # 1. INTERFAZ DE USUARIO (UI)
@@ -600,209 +807,11 @@ server <- function(input, output, session) {
   # ----------------------------------------------------------------------------
   # 2.1 RENDERIZADO BASE DEL MAPA LEAFLET
   # ----------------------------------------------------------------------------
-  output$mapa_pdu <- renderLeaflet({
-    zonif_bbox <- st_bbox(st_transform(capas$zonificacion, CRS_GEOGRAFICO))
+  output$mapa_pdu <- renderLeaflet(mapa_pdu_compartido)
 
-    leaflet() %>%
-      addProviderTiles(providers$OpenStreetMap, group = "OpenStreetMap") %>%
-      addProviderTiles(providers$Esri.WorldImagery, group = "Satélite") %>%
-      addProviderTiles(providers$Esri.WorldTopoMap, group = "Topográfico") %>%
-      
-
-      
-      # 2. Ámbito PDU (color rojo resaltante para máxima visibilidad)
-      addPolygons(
-        data = capas$ambito,
-        group = "Ámbito PDU Anta",
-        fillColor = "#FFCDD2",
-        fillOpacity = 0.08,
-        color = "#D32F2F",
-        weight = 3.5,
-        opacity = 1.0,
-        dashArray = "8, 5",
-        label = ~paste("Ámbito PDU Anta -", NOM_AI)
-      ) %>%
-      
-      # 3. Servidumbre Alta Tensión
-      addPolygons(
-        data = capas$alta_tension_buffer,
-        group = "Servidumbre Alta Tensión",
-        fillColor = "#D6A43A",
-        fillOpacity = 0.24,
-        color = "#A23E3A",
-        weight = 0.9,
-        label = ~paste("Faja de Servidumbre Eléctrica:", TENS_NOMIN, "kV"),
-        popup = ~paste0(
-          "<div style='font-size:12px; font-family:Inter, sans-serif; min-width:210px;'>",
-          "<div style='background:#A23E3A; color:white; padding:5px 8px; font-weight:bold; border-radius:4px 4px 0 0;'>FAJA DE SERVIDUMBRE ELÉCTRICA</div>",
-          "<div style='padding:6px;'>",
-          "<b>Nivel de Tensión:</b> ", htmltools::htmlEscape(TENS_NOMIN), " kV<br>",
-          "<b>Empresa:</b> ", htmltools::htmlEscape(NOM_EMPRES), "<br>",
-          "<div style='margin-top:4px; font-size:11px; color:#A23E3A; font-weight:600;'>Área con restricción de edificación (CNE)</div>",
-          "</div></div>"
-        )
-      ) %>%
-      
-      # 4. Líneas Alta Tensión
-      addPolylines(
-        data = capas$alta_tension,
-        group = "Líneas de Alta Tensión",
-        color = "#A23E3A",
-        weight = 1.8,
-        opacity = 0.85,
-        dashArray = "8, 5",
-        label = ~paste("Línea AT:", NOM_EMPRES, "-", TENS_NOMIN),
-        popup = ~paste0(
-          "<div style='font-size:12px; font-family:Inter, sans-serif; min-width:210px;'>",
-          "<div style='background:#A23E3A; color:white; padding:5px 8px; font-weight:bold; border-radius:4px 4px 0 0;'>LÍNEA DE ALTA TENSIÓN</div>",
-          "<div style='padding:6px;'>",
-          "<b>Línea:</b> ", htmltools::htmlEscape(NOM_LINEA), "<br>",
-          "<b>Empresa:</b> ", htmltools::htmlEscape(NOM_EMPRES), "<br>",
-          "<b>Tensión:</b> ", htmltools::htmlEscape(TENS_NOMIN), " kV",
-          "</div></div>"
-        )
-      ) %>%
-      
-      # 5. Servidumbre Ferrocarril
-      addPolygons(
-        data = capas$ferrocarril_buffer,
-        group = "Zona de influencia del ferrocarril",
-        fillColor = "#8B7AA8",
-        fillOpacity = 0.20,
-        color = "#6B5A88",
-        weight = 0.9,
-        label = ~"Zona de influencia del ferrocarril (15 m por lado; requiere verificación sectorial)",
-        popup = ~paste0(
-          "<div style='font-size:12px; font-family:Inter, sans-serif; min-width:220px;'>",
-          "<div style='background:#6B5A88; color:white; padding:5px 8px; font-weight:bold; border-radius:4px 4px 0 0;'>ZONA DE INFLUENCIA DEL FERROCARRIL</div>",
-          "<div style='padding:6px;'>",
-          "<b>Faja de Seguridad:</b> 15 m por lado respecto al eje.<br>",
-          "<b>Normativa:</b> D.S. 032-2005-MTC.<br>",
-          "<div style='margin-top:4px; font-size:11px; color:#6B5A88;'>Verificar derecho de vía con el MTC y concesionario.</div>",
-          "</div></div>"
-        )
-      ) %>%
-      
-      # 6. Vía Férrea
-      addPolylines(
-        data = capas$ferrocarril,
-        group = "Vía Férrea (Tren)",
-        color = "#3F4844",
-        weight = 2.1,
-        opacity = 0.88,
-        dashArray = "7, 5",
-        label = ~paste("Ferrocarril:", NOM_FERR, "-", TRAMO_FERR),
-        popup = ~paste0(
-          "<div style='font-size:12px; font-family:Inter, sans-serif; min-width:200px;'>",
-          "<div style='background:#3F4844; color:white; padding:5px 8px; font-weight:bold; border-radius:4px 4px 0 0;'>RED FERROVIARIA</div>",
-          "<div style='padding:6px;'>",
-          "<b>Ferrocarril:</b> ", htmltools::htmlEscape(NOM_FERR), "<br>",
-          "<b>Tramo:</b> ", htmltools::htmlEscape(TRAMO_FERR), "<br>",
-          "<b>Administrador:</b> ", htmltools::htmlEscape(ADM_FERR),
-          "</div></div>"
-        )
-      ) %>%
-      
-      # 7. Zonificación PDU
-      addPolygons(
-        data = capas$zonificacion,
-        group = "Zonificación PDU",
-        fillColor = ~COLOR_MAPA,
-        fillOpacity = 0.60,
-        color = ~COLOR_MAPA,
-        opacity = 0.88,
-        weight = 0.8,
-        label = ~paste0(COD_S_ZONA, ": ", NOMBRE_COMPLETO),
-        popup = ~POPUP_MAPA,
-        highlightOptions = highlightOptions(
-          weight = 2.2,
-          color = "#F1C75B",
-          fillOpacity = 0.82,
-          bringToFront = FALSE
-        )
-      ) %>%
-      
-
-      
-      addEasyButton(easyButton(
-        icon = "fa-crosshairs", title = "Mi Ubicación Actual (GPS)",
-        position = "topleft",
-        onClick = JS("function(btn, map){ obtenerUbicacionGPS(); }")
-      )) %>%
-      addEasyButton(easyButton(
-        icon = "fa-expand", title = "Ajustar vista a Zonificación PDU",
-        position = "topleft",
-        onClick = JS(sprintf(
-          "function(btn, map){ map.invalidateSize(); map.fitBounds([[%f, %f], [%f, %f]], {padding: [12, 12], maxZoom: 16}); }",
-          unname(zonif_bbox["ymin"]), unname(zonif_bbox["xmin"]),
-          unname(zonif_bbox["ymax"]), unname(zonif_bbox["xmax"])
-        ))
-      )) %>%
-      
-      addLayersControl(
-        baseGroups = c("OpenStreetMap", "Satélite", "Topográfico"),
-        overlayGroups = c(
-          "Zonificación PDU", "Ámbito PDU Anta",
-          "Servidumbre Alta Tensión", "Líneas de Alta Tensión",
-          "Zona de influencia del ferrocarril", "Vía Férrea (Tren)"
-        ),
-        options = layersControlOptions(collapsed = TRUE)
-      ) %>%
-      
-      fitBounds(
-        lng1 = unname(zonif_bbox["xmin"]),
-        lat1 = unname(zonif_bbox["ymin"]),
-        lng2 = unname(zonif_bbox["xmax"]),
-        lat2 = unname(zonif_bbox["ymax"])
-      ) %>%
-      
-      htmlwidgets::onRender(sprintf("
-        function(el, x) {
-          var map = this;
-          var zonifBounds = [[%f, %f], [%f, %f]];
-          
-          function enfocarZonificacionMobile() {
-            if (!map) return;
-            map.invalidateSize();
-            map.fitBounds(zonifBounds, {
-              padding: [15, 15],
-              maxZoom: 16,
-              animate: false
-            });
-          }
-          
-          // Re-intentos escalonados conforme el viewport móvil calcula el 100dvh y el layout se estabiliza
-          setTimeout(enfocarZonificacionMobile, 150);
-          setTimeout(enfocarZonificacionMobile, 600);
-          setTimeout(enfocarZonificacionMobile, 1400);
-          
-          // Soporte ante giros de pantalla (portrait/landscape) y redimensionamiento
-          window.addEventListener('resize', function() {
-            map.invalidateSize();
-          });
-          window.addEventListener('orientationchange', function() {
-            setTimeout(enfocarZonificacionMobile, 350);
-          });
-          
-          // Re-ajustar al cambiar de pestaña en Bootstrap
-          document.addEventListener('shown.bs.tab', function() {
-            setTimeout(enfocarZonificacionMobile, 200);
-          });
-          
-          // Re-ajustar si el usuario colapsa o despliega el sidebar de bslib
-          document.addEventListener('bslib.sidebar.toggle', function() {
-            setTimeout(enfocarZonificacionMobile, 350);
-          });
-        }
-      ",
-      unname(zonif_bbox["ymin"]), unname(zonif_bbox["xmin"]),
-      unname(zonif_bbox["ymax"]), unname(zonif_bbox["xmax"])
-      ))
-  })
-  
   # Refuerzo reactivo: Asegurar encuadre a zonificación en cuanto el cliente móvil completa la conexión
   session$onFlushed(function() {
-    zonif_bb <- st_bbox(st_transform(capas$zonificacion, CRS_GEOGRAFICO))
+    zonif_bb <- zonificacion_bbox
     leafletProxy("mapa_pdu") %>%
       fitBounds(
         lng1 = unname(zonif_bb["xmin"]),
@@ -1128,7 +1137,7 @@ server <- function(input, output, session) {
     } else "" 
     
     # 5. Sistema Vial Propuesto Intersectado o Colindante (Buffer estricto de 25 metros)
-    vias_utm <- st_transform(capas$vias, 32718)
+    vias_utm <- vias_utm_compartidas
     dists_vias <- as.numeric(st_distance(poly_utm, vias_utm))
     idx_vias_cercanas <- which(dists_vias <= 25)
     
@@ -1577,7 +1586,7 @@ server <- function(input, output, session) {
       } else "" 
       
       # Vía propuesta colindante (Buffer estricto 25m)
-      vias_utm <- st_transform(capas$vias, 32718)
+      vias_utm <- vias_utm_compartidas
       dists_v <- as.numeric(st_distance(pt_data$geom_utm, vias_utm))
       idx_min_v <- which.min(dists_v)
       min_dist_v <- dists_v[idx_min_v]
@@ -1870,7 +1879,7 @@ server <- function(input, output, session) {
         paste0(paste(nom_f, collapse = " / "), " (Tramo: ", paste(tramo_f, collapse = ", "), ")")
       } else "" 
       
-      vias_utm <- st_transform(capas$vias, 32718)
+      vias_utm <- vias_utm_compartidas
       dists_v <- as.numeric(st_distance(pt_data$geom_utm, vias_utm))
       idx_min_v <- which.min(dists_v)
       min_dist_v <- dists_v[idx_min_v]
