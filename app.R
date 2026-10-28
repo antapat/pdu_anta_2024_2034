@@ -79,10 +79,11 @@ GERENCIA_OFICIAL <- "GERENCIA DE DESARROLLO URBANO Y RURAL"
 SUBGERENCIA_OFICIAL <- "SUB GERENCIA DE PLANEAMIENTO URBANO Y ACONDICIONAMIENTO TERRITORIAL"
 SUBGERENCIA_ROL <- "Órgano Ejecutor del Plan de Desarrollo Urbano (PDU Anta)"
 CARACTER_INFORMATIVO <- paste(
-  "Ficha de carácter exclusivamente informativo. No constituye certificado oficial,",
-  "no genera derechos urbanísticos ni reemplaza la verificación técnica municipal.",
-  "El certificado oficial debe tramitarse ante la Gerencia de Desarrollo Urbano y Rural y la Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial",
-  "de la Municipalidad Provincial de Anta."
+  "Documento de carácter informativo, generado mediante consulta al visor geográfico municipal de la",
+  "Municipalidad Provincial de Anta. No constituye certificado, constancia ni autorización administrativa,",
+  "no genera derechos urbanísticos y no sustituye los procedimientos técnicos ni administrativos",
+  "previstos en la normativa vigente. Todo trámite oficial o expedición de certificados debe gestionarse",
+  "formalmente ante la Gerencia de Desarrollo Urbano y Rural (GDUR) y la Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial."
 )
 
 # ------------------------------------------------------------------------------

@@ -80,6 +80,73 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
           )
         ),
         
+        # SUSTENTO LEGAL Y TRANSPARENCIA DEL GEOVISOR
+        div(
+          class = "card p-3 p-sm-4 mb-4 shadow-sm border-0",
+          style = "background-color: #F8FAFC; border: 1px solid #E2E8F0 !important; border-top: 4px solid #174A3A !important; border-radius: var(--radius-md);",
+          div(
+            class = "d-flex align-items-center gap-2 mb-3 pb-2 border-bottom",
+            icon("scale-balanced", class = "fs-4 text-success"),
+            tags$h5(class = "fw-bold mb-0", style = "color: #174A3A;", "Sustento Técnico-Legal de la Implementación del GeoVisor y Transparencia Pública")
+          ),
+          tags$p(
+            class = "small text-secondary mb-3",
+            style = "line-height: 1.55;",
+            "La implementación y puesta en servicio del ", tags$b("GeoVisor Oficial del Plan de Desarrollo Urbano de Anta (2024 - 2034)"),
+            " por parte de la Municipalidad Provincial de Anta se sustenta en el marco normativo nacional y da estricto cumplimiento a los siguientes dispositivos legales:"
+          ),
+          div(
+            class = "row g-3 mb-3",
+            div(
+              class = "col-md-6",
+              div(
+                class = "p-3 h-100 rounded-3 border bg-white shadow-xs",
+                div(
+                  class = "d-flex align-items-center gap-2 mb-2",
+                  span(class = "badge bg-success", "D.S. N.º 012-2022-VIVIENDA"),
+                  tags$b(class = "small text-dark", "Art. 9, Numeral 9.1 — RATDUS")
+                ),
+                tags$p(
+                  class = "small text-muted mb-0",
+                  tags$strong("Publicación y Transparencia: "),
+                  "Dispone la publicación obligatoria de los planes urbanos aprobados, con sus anexos técnicos y cartográficos, en el Portal de Transparencia Estándar de las municipalidades correspondientes, garantizando el libre acceso de la ciudadanía a la información territorial."
+                )
+              )
+            ),
+            div(
+              class = "col-md-6",
+              div(
+                class = "p-3 h-100 rounded-3 border bg-white shadow-xs",
+                div(
+                  class = "d-flex align-items-center gap-2 mb-2",
+                  span(class = "badge", style = "background-color: #B68A2C; color: white;", "Ley N.º 31313 / D.Leg. 1674"),
+                  tags$b(class = "small text-dark", "Artículo 36 — Ley DUS")
+                ),
+                tags$p(
+                  class = "small text-muted mb-0",
+                  tags$strong("Regulación de la Zonificación: "),
+                  "Regula la zonificación y señala taxativamente que esta se concreta en planos de zonificación, reglamento y parámetros urbanísticos y edificatorios aplicables a la jurisdicción territorial."
+                )
+              )
+            )
+          ),
+          div(
+            class = "p-3 rounded-2",
+            style = "background-color: #F0FDF4; border-left: 3.5px solid #16A34A;",
+            tags$div(
+              class = "fw-bold small mb-1", style = "color: #166534;",
+              icon("circle-check"), " Alcance Institucional y Función del GeoVisor:"
+            ),
+            tags$p(
+              class = "small text-dark mb-0",
+              style = "line-height: 1.5;",
+              "Para sustentar la implementación del visor de la Municipalidad Provincial de Anta (MPA), se citan ambos artículos y se señala que ",
+              tags$b("el visor constituye un mecanismo de difusión y acceso público a la información territorial aprobada, sin sustituir la publicación oficial ni los documentos normativos correspondientes"),
+              ", facilitando el conocimiento ciudadano de los planos de zonificación y parámetros normativos."
+            )
+          )
+        ),
+        
         # 2. BLOQUE DE APROBACIÓN LEGAL Y ACTUALIZACIÓN NORMATIVA
         div(
           class = "mb-4",

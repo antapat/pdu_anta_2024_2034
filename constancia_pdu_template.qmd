@@ -124,8 +124,8 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
   stroke: 0.5pt + rgb("#D97706"),
   width: 100%,
   [
-    #text(size: 6.0pt, fill: rgb("#78350F"))[
-      *Carácter Informativo:* Ficha de carácter exclusivamente informativo. No constituye certificado oficial, no genera derechos urbanísticos ni reemplaza la verificación técnica municipal. El certificado oficial debe tramitarse ante la Gerencia de Desarrollo Urbano y Rural de la Municipalidad Provincial de Anta.
+    #text(size: 5.9pt, fill: rgb("#78350F"))[
+      *Alcance y Carácter Informativo:* Documento de carácter informativo, generado mediante consulta al visor geográfico municipal de la Municipalidad Provincial de Anta. No constituye certificado, constancia ni autorización administrativa, no genera derechos urbanísticos y no sustituye los procedimientos ni la verificación técnica previstos en la normativa vigente. Todo trámite oficial debe gestionarse formalmente ante la Gerencia de Desarrollo Urbano y Rural (GDUR) y la Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial.
     ]
   ]
 )
@@ -338,8 +338,8 @@ if (!is.null(lp) && length(lp) > 0) {
 #line(length: 100%, stroke: 0.5pt + rgb("#CBD5E1"))
 #v(1pt)
 #align(center)[
-  #text(size: 6.0pt, fill: rgb("#64748B"))[
-    *Ficha informativa y referencial.* Expedida por el Geovisor Oficial del Plan de Desarrollo Urbano de Anta (PDU 2024 - 2034) — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (GDUR) — Municipalidad Provincial de Anta.
+  #text(size: 5.8pt, fill: rgb("#64748B"))[
+    *Documento de carácter informativo*, generado mediante consulta al visor geográfico municipal del PDU Anta (2024 - 2034). No constituye certificado, constancia ni autorización administrativa, y no sustituye los procedimientos previstos en la normativa vigente. — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (GDUR) — Municipalidad Provincial de Anta.
   ]
 ]
 ```
