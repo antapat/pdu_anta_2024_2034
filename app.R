@@ -77,13 +77,13 @@ ORDENANZA_ACTUALIZACION_PDU <- "ORDENANZA MUNICIPAL N°008-2026-A-MPA-C"
 URL_EL_PERUANO_PDU <- "https://busquedas.elperuano.pe/dispositivo/NL/2407024-1"
 GERENCIA_OFICIAL <- "GERENCIA DE DESARROLLO URBANO Y RURAL"
 SUBGERENCIA_OFICIAL <- "SUB GERENCIA DE PLANEAMIENTO URBANO Y ACONDICIONAMIENTO TERRITORIAL"
-SUBGERENCIA_ROL <- "Órgano Ejecutor del Plan de Desarrollo Urbano (PDU Anta)"
+SUBGERENCIA_ROL <- "Gerencia de Desarrollo Urbano y Rural — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial"
 CARACTER_INFORMATIVO <- paste(
   "Documento de carácter informativo, generado mediante consulta al visor geográfico municipal de la",
   "Municipalidad Provincial de Anta. No constituye certificado, constancia ni autorización administrativa,",
   "no genera derechos urbanísticos y no sustituye los procedimientos técnicos ni administrativos",
   "previstos en la normativa vigente. Todo trámite oficial o expedición de certificados debe gestionarse",
-  "formalmente ante la Gerencia de Desarrollo Urbano y Rural (GDUR) y la Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial."
+  "formalmente ante la Gerencia de Desarrollo Urbano y Rural — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial."
 )
 
 # ------------------------------------------------------------------------------
@@ -113,7 +113,7 @@ ui <- page_navbar(
       # Fila 2: Subtítulo territorial institucional
       tags$small(
         class = "header-subtitle d-none d-md-inline-block",
-        "Municipalidad Provincial de Anta • GDUR — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor)"
+        "Municipalidad Provincial de Anta • Gerencia de Desarrollo Urbano y Rural — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial"
       )
     )
   ),
@@ -1385,7 +1385,7 @@ server <- function(input, output, session) {
     )
   })
   
-  # Función auxiliar para generar el HTML completo del certificado con mapa a página completa, logos, escala, rosa de vientos y datos
+  # Función auxiliar para generar el HTML completo del certificado con mapa oficial, logos, escala, rosa de vientos y datos
   generar_html_certificado <- function() {
     modo <- modo_activo()
     
@@ -1505,7 +1505,7 @@ server <- function(input, output, session) {
             style = "vertical-align:middle; padding-left:12px; border:none;",
             tags$div(class = "header-title", "MUNICIPALIDAD PROVINCIAL DE ANTA"),
             tags$div(class = "header-subtitle", if (modo == "punto") "REPORTE INFORMATIVO — PDU ANTA 2024 - 2034" else "REPORTE INFORMATIVO DE PARÁMETROS URBANÍSTICOS Y ZONIFICACIÓN"),
-            tags$div(class = "header-meta", paste("Consulta:", codigo_consulta, "|", fecha_consulta_str, "| GDUR — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor)"))
+            tags$div(class = "header-meta", paste("Consulta:", codigo_consulta, "|", fecha_consulta_str, "| Gerencia de Desarrollo Urbano y Rural — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial"))
           ),
           tags$td(
             style = "width:75px; text-align:right; vertical-align:middle; border:none; padding:0;",
@@ -1529,7 +1529,7 @@ server <- function(input, output, session) {
             style = "vertical-align:middle; padding-left:12px; border:none;",
             tags$div(class = "header-title", style = "font-size: 1.02rem;", "MUNICIPALIDAD PROVINCIAL DE ANTA"),
             tags$div(class = "header-subtitle", style = "font-size: 0.80rem;", if (modo == "punto") "REPORTE INFORMATIVO — FICHA TÉCNICA Y PARÁMETROS URBANÍSTICOS" else "REPORTE INFORMATIVO — FICHA TÉCNICA NORMATIVA DE PREDIO"),
-            tags$div(class = "header-meta", style = "font-size: 0.68rem;", paste("PDU Anta 2024 - 2034 • GDUR — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor) • Consulta:", codigo_consulta))
+            tags$div(class = "header-meta", style = "font-size: 0.68rem;", paste("PDU Anta 2024 - 2034 • Gerencia de Desarrollo Urbano y Rural — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial • Consulta:", codigo_consulta))
           ),
           tags$td(
             style = "width:65px; text-align:right; vertical-align:middle; border:none; padding:0;",
@@ -1542,14 +1542,14 @@ server <- function(input, output, session) {
     # Pie de página institucional numerado para Página 1
     footer_p1 <- div(
       class = "cert-footer",
-      div(class = "cert-footer-left", tags$b("Municipalidad Provincial de Anta"), " — GDUR | Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor) | PDU Anta 2024 - 2034"),
+      div(class = "cert-footer-left", tags$b("Municipalidad Provincial de Anta"), " — Gerencia de Desarrollo Urbano y Rural — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial | PDU Anta 2024 - 2034"),
       div(class = "cert-footer-right", tags$b("Página 1 de 2"))
     )
     
     # Pie de página institucional numerado para Página 2
     footer_p2 <- div(
       class = "cert-footer",
-      div(class = "cert-footer-left", tags$b("Municipalidad Provincial de Anta"), " — GDUR | Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor) | PDU Anta 2024 - 2034"),
+      div(class = "cert-footer-left", tags$b("Municipalidad Provincial de Anta"), " — Gerencia de Desarrollo Urbano y Rural — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial | PDU Anta 2024 - 2034"),
       div(class = "cert-footer-right", tags$b("Página 2 de 2"))
     )
     
@@ -1623,7 +1623,7 @@ server <- function(input, output, session) {
           div(
             class = "cert-card",
             
-            # --- PÁGINA 1: HOJA DEL PLANO CARTOGRÁFICO OFICIAL A PÁGINA COMPLETA ---
+            # --- PÁGINA 1: HOJA DEL PLANO CARTOGRÁFICO OFICIAL OFICIAL ---
             div(
               class = "cert-page",
               div(class = "cert-watermark", "DOCUMENTO INFORMATIVO"),
@@ -1636,7 +1636,7 @@ server <- function(input, output, session) {
                 ),
                 if (!is.null(mapa_img_uri)) {
                   tagList(
-                    tags$div(class = "section-heading", "PLANO DE UBICACIÓN Y ZONIFICACIÓN TERRITORIAL (PÁGINA COMPLETA)"),
+                    tags$div(class = "section-heading", "PLANO DE UBICACIÓN Y ZONIFICACIÓN TERRITORIAL"),
                     div(class = "mapa-container", tags$img(src = mapa_img_uri, class = "mapa-img-fullpage"))
                   )
                 }
@@ -1671,27 +1671,7 @@ server <- function(input, output, session) {
                     tags$tr(tags$th("Ámbito PDU Anta:"), tags$td(if (!ambito_disponible) "No disponible" else if (en_ambito) "Dentro del ámbito reglamentado" else "Fuera del ámbito reglamentado"))
                   )
                 ),
-                tags$div(class = "section-heading", "3. SISTEMA VIAL PROPUESTO Y SECCIÓN VIAL (SV)"),
-                tags$table(
-                  class = "table-cert mb-1",
-                  tags$thead(
-                    tags$tr(tags$th("Jerarquía Vial"), tags$th("Código de Vía"), tags$th("Sección Normativa (SV)"), tags$th("Distancia al Punto"))
-                  ),
-                  tags$tbody(
-                    tags$tr(
-                      tags$td(tags$b(sis_vial_txt)),
-                      tags$td(cod_via_txt),
-                      tags$td(tags$span(class = "badge-vial", seccion_vial_txt)),
-                      tags$td(dist_v_txt)
-                    )
-                  )
-                ),
-                tags$div(
-                  class = "methodology-note",
-                  "Nota Metodológica: Las vías del Sistema Vial Propuesto mostradas corresponden a los ejes normativos identificados dentro de un área de influencia directa (buffer de 25 metros) respecto al punto o predio consultado."
-                ),
-                
-                tags$div(class = "section-heading", "4. ZONIFICACIÓN Y PARÁMETROS URBANÍSTICOS"),
+                                tags$div(class = "section-heading", "2. ZONIFICACIÓN Y PARÁMETROS URBANÍSTICOS"),
                 tags$table(
                   class = "table-cert mb-2",
                   tags$tbody(
@@ -1713,7 +1693,7 @@ server <- function(input, output, session) {
                   div(class = "alert alert-warning", "El punto intersecta varias subzonas. Verifique el límite cartográfico; se incluyen todas las fichas aplicables."),
                   lapply(pdu_buscar_parametros(df_parametros, setdiff(capas$zonificacion$COD_S_ZONA[idx_zonif_punto], cod_s_zona)), pdu_tabla_parametros)
                 ),
-                tags$div(class = "section-heading", "5. AFECTACIONES DE INFRAESTRUCTURA"),
+                tags$div(class = "section-heading", "3. AFECTACIONES DE INFRAESTRUCTURA"),
                 tags$ul(
                   class = "cert-list",
                   tags$li(if (en_serv_at) tags$b(class = "text-danger", "⚠️ AFECTACIÓN POR FAJA DE SERVIDUMBRE DE ALTA TENSIÓN (CNE). Prohibida edificación.") else "✓ Sin afectación por fajas de alta tensión."),
@@ -1742,7 +1722,7 @@ server <- function(input, output, session) {
           div(
             class = "cert-card",
             
-            # --- PÁGINA 1: HOJA DEL PLANO CARTOGRÁFICO OFICIAL A PÁGINA COMPLETA ---
+            # --- PÁGINA 1: HOJA DEL PLANO CARTOGRÁFICO OFICIAL OFICIAL ---
             div(
               class = "cert-page",
               div(class = "cert-watermark", "DOCUMENTO INFORMATIVO"),
@@ -1755,7 +1735,7 @@ server <- function(input, output, session) {
                 ),
                 if (!is.null(mapa_img_uri)) {
                   tagList(
-                    tags$div(class = "section-heading", "PLANO DE UBICACIÓN Y ZONIFICACIÓN DEL PREDIO (PÁGINA COMPLETA)"),
+                    tags$div(class = "section-heading", "PLANO DE UBICACIÓN Y ZONIFICACIÓN DEL PREDIO"),
                     div(class = "mapa-container", tags$img(src = mapa_img_uri, class = "mapa-img-fullpage"))
                   )
                 }
@@ -1782,34 +1762,7 @@ server <- function(input, output, session) {
                   )
                 ),
                 
-                tags$div(class = "section-heading", "2. SISTEMA VIAL PROPUESTO Y SECCIÓN VIAL (SV)"),
-                if (nrow(poly_data$tabla_vias_predio) > 0) {
-                  tags$table(
-                    class = "table-cert mb-1",
-                    tags$thead(
-                      tags$tr(tags$th("Jerarquía Vial"), tags$th("Código de Vía"), tags$th("Sección Normativa (SV)"), tags$th("Distancia al Predio"))
-                    ),
-                    tags$tbody(
-                      lapply(1:nrow(poly_data$tabla_vias_predio), function(i) {
-                        r_v <- poly_data$tabla_vias_predio[i, ]
-                        tags$tr(
-                          tags$td(tags$b(r_v$SIS_VIAL)),
-                          tags$td(r_v$COD_VIA_PR),
-                          tags$td(tags$span(class = "badge-vial", r_v$SECCION_VI)),
-                          tags$td(paste0(r_v$DISTANCIA_M, " m"))
-                        )
-                      })
-                    )
-                  )
-                } else {
-                  tags$p(class = "text-muted small mb-1", "No se registran vías propuestas del PDU dentro del área de influencia directa (buffer de 25 metros) del predio.")
-                },
-                tags$div(
-                  class = "methodology-note",
-                  "Nota Metodológica: Las vías del Sistema Vial Propuesto mostradas corresponden a los ejes normativos identificados dentro de un área de influencia directa (buffer de 25 metros) respecto al perímetro del predio o punto consultado."
-                ),
-                
-                tags$div(class = "section-heading", "3. DESGLOSE DE ZONIFICACIÓN EN EL LOTE"),
+                                tags$div(class = "section-heading", "2. DESGLOSE DE ZONIFICACIÓN EN EL LOTE"),
                 tags$table(
                   class = "table-cert mb-2",
                   tags$thead(
@@ -1832,14 +1785,14 @@ server <- function(input, output, session) {
                   )
                 ),
                 
-                tags$div(class = "section-heading", "4. AFECTACIONES POR INFRAESTRUCTURA"),
+                tags$div(class = "section-heading", "3. AFECTACIONES POR INFRAESTRUCTURA"),
                 tags$ul(
                   class = "cert-list",
                   tags$li(if (poly_data$pct_at > 0) tags$b(class = "text-danger", paste0("⚠️ Servidumbre Alta Tensión: ", poly_data$area_at_m2, " m² (", poly_data$pct_at, "% del predio)", if (!is.null(poly_data$lineas_at_txt) && nzchar(poly_data$lineas_at_txt)) paste0(" — Línea: ", poly_data$lineas_at_txt) else "", ". Prohibida edificación dentro de la faja.")) else "✓ Sin afectación por fajas de servidumbre de líneas de alta tensión (CNE)."),
                   tags$li(if (poly_data$pct_ffcc > 0) tags$b(class = "text-warning", paste0("⚠️ Zona de influencia del ferrocarril: ", poly_data$area_ffcc_m2, " m² (", poly_data$pct_ffcc, "% del predio)", if (!is.null(poly_data$lineas_ffcc_txt) && nzchar(poly_data$lineas_ffcc_txt)) paste0(" — Vía: ", poly_data$lineas_ffcc_txt) else "", ". Requiere verificación sectorial ante el MTC.")) else "✓ Sin proximidad a la zona de influencia del ferrocarril (D.S. 032-2005-MTC).")
                 ),
                 
-                tags$div(class = "section-heading", "5. PARÁMETROS URBANÍSTICOS POR ZONA"),
+                tags$div(class = "section-heading", "4. PARÁMETROS URBANÍSTICOS POR ZONA"),
                 if (length(poly_data$lista_parametros_zonas) > 0) {
                   lapply(poly_data$lista_parametros_zonas, function(p_row) {
                     div(

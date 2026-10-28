@@ -78,7 +78,7 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
         #text(weight: "bold", size: 8.5pt, fill: rgb("#006633"))[MUNICIPALIDAD PROVINCIAL DE ANTA]\
         #text(weight: "bold", size: 7.0pt, fill: rgb("#B88808"))[GERENCIA DE DESARROLLO URBANO Y RURAL]\
         #text(weight: "bold", size: 6.5pt, fill: rgb("#006633"))[SUB GERENCIA DE PLANEAMIENTO URBANO Y ACONDICIONAMIENTO TERRITORIAL]\
-        #text(size: 6.0pt, fill: rgb("#334155"))[Órgano Ejecutor del Plan de Desarrollo Urbano — PDU Anta (2024 - 2034)]
+        #text(size: 6.0pt, fill: rgb("#334155"))[Plan de Desarrollo Urbano — PDU Anta (2024 - 2034)]
       ],
       [
         #if "`r logo_pdu_rel`" != "" [
@@ -97,7 +97,7 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
       align: (left + horizon, right + horizon),
       [
         #text(size: 6.1pt, fill: rgb("#64748B"))[
-          *Municipalidad Provincial de Anta* — GDUR | *Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial* | *Ficha:* `r dat$fecha_hora` | *Cód:* `r dat$codigo_consulta`
+          *Municipalidad Provincial de Anta* — Gerencia de Desarrollo Urbano y Rural — *Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial* | *Ficha:* `r dat$fecha_hora` | *Cód:* `r dat$codigo_consulta`
         ]
       ],
       [
@@ -125,13 +125,13 @@ logo_pdu_rel <- if (file.exists("logo/pdu_actualizado_sf.png")) "logo/pdu_actual
   width: 100%,
   [
     #text(size: 5.9pt, fill: rgb("#78350F"))[
-      *Alcance y Carácter Informativo:* Documento de carácter informativo, generado mediante consulta al visor geográfico municipal de la Municipalidad Provincial de Anta. No constituye certificado, constancia ni autorización administrativa, no genera derechos urbanísticos y no sustituye los procedimientos ni la verificación técnica previstos en la normativa vigente. Todo trámite oficial debe gestionarse formalmente ante la Gerencia de Desarrollo Urbano y Rural (GDUR) y la Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial.
+      *Alcance y Carácter Informativo:* Documento de carácter informativo, generado mediante consulta al visor geográfico municipal de la Municipalidad Provincial de Anta. No constituye certificado, constancia ni autorización administrativa, no genera derechos urbanísticos y no sustituye los procedimientos ni la verificación técnica previstos en la normativa vigente. Todo trámite oficial debe gestionarse formalmente ante la Gerencia de Desarrollo Urbano y Rural — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial.
     ]
   ]
 )
 
 #v(2pt)
-#text(fill: rgb("#006633"), weight: "bold", size: 8pt)[PLANO DE UBICACIÓN Y ZONIFICACIÓN DEL PREDIO (LÁMINA CARTOGRÁFICA OFICIAL)]
+#text(fill: rgb("#006633"), weight: "bold", size: 8pt)[PLANO DE UBICACIÓN Y ZONIFICACIÓN DEL PREDIO]
 #v(-3pt)
 #line(length: 100%, stroke: 0.8pt + rgb("#98C838"))
 #v(1pt)
@@ -203,44 +203,7 @@ if (!is.null(tz) && is.data.frame(tz) && nrow(tz) > 0) {
 
 ```{=typst}
 #v(1.5pt)
-#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[3. SISTEMA VIAL PROPUESTO Y SECCIÓN VIAL (SV)]
-#v(-3pt)
-#line(length: 100%, stroke: 0.8pt + rgb("#98C838"))
-#v(1.5pt)
-```
-
-```{r}
-#| results: 'asis'
-tv <- dat$tabla_vias
-if (!is.null(tv) && is.data.frame(tv) && nrow(tv) > 0) {
-  cat("| Jerarquía del Sistema Vial | Código de Vía | Sección Normativa (SV) | Distancia al Predio |\n")
-  cat("| :--- | :--- | :--- | :--- |\n")
-  for (i in 1:nrow(tv)) {
-    cat(sprintf("| **%s** | %s | **%s** | %s m |\n",
-                tv$SIS_VIAL[i], tv$COD_VIA_PR[i], tv$SECCION_VI[i], tv$DISTANCIA_M[i]))
-  }
-  cat("\n")
-} else {
-  cat("_No se registran vías propuestas del PDU dentro del área de influencia directa (buffer de 25 metros)._\n\n")
-}
-```
-
-```{=typst}
-#block(
-  fill: rgb("#F8FAFC"),
-  inset: (x: 6pt, y: 3pt),
-  radius: 2pt,
-  stroke: (left: 2.5pt + rgb("#008800")),
-  width: 100%,
-  [
-    #text(size: 6.6pt, style: "italic", fill: rgb("#475569"))[
-      *Nota Metodológica:* Las vías del Sistema Vial Propuesto mostradas corresponden a los ejes normativos identificados dentro de un área de influencia directa (buffer de 25 metros) respecto al perímetro del predio o punto consultado.
-    ]
-  ]
-)
-
-#v(1.5pt)
-#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[4. CONDICIONANTES Y AFECTACIONES DE INFRAESTRUCTURA]
+#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[3. CONDICIONANTES Y AFECTACIONES DE INFRAESTRUCTURA]
 #v(-3pt)
 #line(length: 100%, stroke: 0.8pt + rgb("#98C838"))
 #v(1.5pt)
@@ -267,7 +230,7 @@ cat("\n")
 
 ```{=typst}
 #v(1.5pt)
-#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[5. PARÁMETROS URBANÍSTICOS Y EDIFICATORIOS NORMATIVOS]
+#text(fill: rgb("#006633"), weight: "bold", size: 8.5pt)[4. PARÁMETROS URBANÍSTICOS Y EDIFICATORIOS NORMATIVOS]
 #v(-3pt)
 #line(length: 100%, stroke: 0.8pt + rgb("#98C838"))
 #v(1.5pt)
@@ -339,7 +302,7 @@ if (!is.null(lp) && length(lp) > 0) {
 #v(1pt)
 #align(center)[
   #text(size: 5.8pt, fill: rgb("#64748B"))[
-    *Documento de carácter informativo*, generado mediante consulta al visor geográfico municipal del PDU Anta (2024 - 2034). No constituye certificado, constancia ni autorización administrativa, y no sustituye los procedimientos previstos en la normativa vigente. — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (GDUR) — Municipalidad Provincial de Anta.
+    *Documento de carácter informativo*, generado mediante consulta al visor geográfico municipal del PDU Anta (2024 - 2034). No constituye certificado, constancia ni autorización administrativa, y no sustituye los procedimientos previstos en la normativa vigente. — Gerencia de Desarrollo Urbano y Rural — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial — Municipalidad Provincial de Anta.
   ]
 ]
 ```

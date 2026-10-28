@@ -30,7 +30,7 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
             img(src = "escudo_muni_anta.png", style = "height: 65px; width: auto; background: white; padding: 4px; border-radius: 8px;", alt = "Escudo Anta"),
             div(
               tags$h3(class = "fw-bold mb-1 text-white", "PLAN DE DESARROLLO URBANO DE ANTA (2024 - 2034)"),
-              tags$h6(class = "mb-2", style = "color: #E2E8F0;", "Municipalidad Provincial de Anta — GDUR • Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial (Órgano Ejecutor)"),
+              tags$h6(class = "mb-2", style = "color: #E2E8F0;", "Municipalidad Provincial de Anta — Gerencia de Desarrollo Urbano y Rural — Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial"),
               div(
                 class = "d-flex flex-wrap gap-2 mt-2",
                 span(class = "badge", style = "background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); font-size: 0.78rem;", icon("calendar-days"), " Vigencia: 2024 - 2034"),
