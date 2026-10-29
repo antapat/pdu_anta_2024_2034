@@ -1,4 +1,22 @@
 # Preparacion compartida por proceso; los analisis usan siempre capas originales.
+pdu_hash_archivo <- function(ruta) {
+  # Si es archivo de texto conocido, normalizar finales de linea para que la
+  # firma sea identica entre plataformas (Windows CRLF vs Linux/Cloud LF).
+  es_texto <- grepl("\\.(r|csv|md|txt|json|cpg|prj|qmd)$", ruta, ignore.case = TRUE)
+  if (es_texto) {
+    tamanio <- file.info(ruta)$size
+    if (is.na(tamanio) || tamanio == 0) return(unname(tools::md5sum(ruta)[[1L]]))
+    contenido <- readBin(ruta, "raw", tamanio)
+    contenido <- contenido[contenido != as.raw(0x0d)]
+    tmp <- tempfile()
+    on.exit(unlink(tmp), add = TRUE)
+    writeBin(contenido, tmp)
+    unname(tools::md5sum(tmp)[[1L]])
+  } else {
+    unname(tools::md5sum(ruta)[[1L]])
+  }
+}
+
 pdu_firma_insumos <- function() {
   archivos <- sort(unique(c(
     list.files("data", pattern = "\\.(shp|shx|dbf|prj|cpg)$", full.names = TRUE, ignore.case = TRUE),
@@ -7,7 +25,7 @@ pdu_firma_insumos <- function() {
     "R/optimizacion.R"
   )))
   archivos <- archivos[file.exists(archivos) & !dir.exists(archivos)]
-  tools::md5sum(archivos)
+  vapply(archivos, pdu_hash_archivo, character(1), USE.NAMES = TRUE)
 }
 
 pdu_cache_vigente <- function(cache, firma = pdu_firma_insumos()) {
@@ -16,10 +34,19 @@ pdu_cache_vigente <- function(cache, firma = pdu_firma_insumos()) {
   # Solo los shapefiles pueden faltar en el paquete cloud; la normativa no.
   omision_valida <- !length(omitidos) ||
     (!dir.exists("data") && all(startsWith(omitidos, "data/")))
-  omision_valida && identical(cache$version, 1L) &&
-    is.list(cache$datos$capas) &&
-    all(names(firma) %in% names(cache$firma)) &&
-    identical(unname(cache$firma[names(firma)]), unname(firma))
+  if (!omision_valida) return(FALSE)
+  if (!identical(cache$version, 1L) || !is.list(cache$datos$capas)) return(FALSE)
+  faltantes <- setdiff(names(firma), names(cache$firma))
+  if (length(faltantes)) {
+    warning("Archivos nuevos no presentes en cache: ", paste(faltantes, collapse = ", "))
+    return(FALSE)
+  }
+  mismatches <- names(firma)[cache$firma[names(firma)] != firma]
+  if (length(mismatches)) {
+    warning("Archivos modificados con firma distinta a la cache: ", paste(mismatches, collapse = ", "))
+    return(FALSE)
+  }
+  TRUE
 }
 
 pdu_leer_cache <- function(ruta = "data_pdu/pdu_preparado.rds") {

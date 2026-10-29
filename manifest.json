@@ -3429,7 +3429,7 @@
       "checksum": "de46eab7bcb594ac378f4ecef63e0a02"
     },
     "data_pdu/pdu_preparado.rds": {
-      "checksum": "6f41fce5226f4494120ac89e22b12f64"
+      "checksum": "3ebd91d033bf5965779c7da5a91be7ef"
     },
     "DESCRIPTION": {
       "checksum": "04727981720d1ec23b4e23af9b2bd2f6"
@@ -3471,7 +3471,7 @@
       "checksum": "14c24720f2a7ed31778b3c0aa75d2dc6"
     },
     "R/optimizacion.R": {
-      "checksum": "7f0f70aac29648bfad9fa17dc020c1ac"
+      "checksum": "abff7f6bea6f335439e2238a2085bc97"
     },
     "R/reglamento_utils.R": {
       "checksum": "b86322d1d92f7fa797b0b77b83ceb762"
@@ -3483,7 +3483,7 @@
       "checksum": "f3e7c41e0d2a7de261ab37dbe282e856"
     },
     "R/supabase_utils.R": {
-      "checksum": "237392c3641fcefce2b8dfccb1437ed8"
+      "checksum": "a2c5d8ab562521a6799b7602c8cc75ae"
     },
     "www/custom.css": {
       "checksum": "e0f5540842fa084858ec1bece37e6b8d"

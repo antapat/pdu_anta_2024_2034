@@ -1,0 +1,22 @@
+# Auto-detect text files and normalize line endings to LF on checkout
+* text=auto eol=lf
+*.R text eol=lf
+*.csv text eol=lf
+*.md text eol=lf
+*.qmd text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.txt text eol=lf
+
+# Explicit binary files
+*.shp binary
+*.shx binary
+*.dbf binary
+*.prj binary
+*.cpg binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.rds binary
+
