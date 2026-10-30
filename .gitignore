@@ -30,3 +30,7 @@ datos_supabase.R
 scratch/
 TOMO III_REGLAMENTO_2024-2034.docx
 **/*.quarto_ipynb
+
+# Herramientas y túneles locales
+/tools/
+*.exe
