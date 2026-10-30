@@ -32,3 +32,4 @@ tools\cloudflared.exe tunnel --url http://127.0.0.1:3838
 taskkill /F /IM Rscript.exe >nul 2>&1
 echo Servidor cerrado.
 pause
+

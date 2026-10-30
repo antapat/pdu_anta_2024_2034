@@ -40,6 +40,7 @@ source("R/local_data.R", local = TRUE)
 source("R/optimizacion.R", local = TRUE)
 source("R/reporte_cartografico_utils.R", local = TRUE)
 source("R/mod_privacidad.R", local = TRUE)
+source("R/mod_acceso_dni.R", local = TRUE)
 source("R/mod_informacion_pdu.R", local = TRUE)
 source("R/mod_catalogo_zonas.R", local = TRUE)
 
@@ -715,38 +716,63 @@ server <- function(input, output, session) {
   # Duración fija de 600 segundos (10 minutos) por sesión con desconexión activa
   # ============================================================================
   session$allowReconnect(FALSE)
-  
   DURACION_SESION_SEG <- 600L
-  tiempo_inicio_sesion <- Sys.time()
-  tiempo_limite_sesion <- tiempo_inicio_sesion + DURACION_SESION_SEG
-  
+
+  sesion_validada <- reactiveVal(FALSE)
+  dni_sesion <- reactiveVal("")
+  tiempo_inicio_sesion <- NULL
+  tiempo_limite_sesion <- NULL
   sesion_cerrada <- FALSE
   aviso_1min_mostrado <- FALSE
-  restante_seg <- reactiveVal(DURACION_SESION_SEG)
-  
+  restante_seg <- reactiveVal(NULL)
+
+  # Control de Acceso Ciudadano (Estilo SUNARP BGR: DNI + Fecha Emisión + Captcha + Máx 2 sesiones/día)
+  control_acceso <- mod_acceso_dni_server(
+    id = "acceso",
+    input = input,
+    output = output,
+    session = session,
+    on_login_success = function(dni) {
+      dni_sesion(dni)
+      tiempo_inicio_sesion <<- Sys.time()
+      tiempo_limite_sesion <<- tiempo_inicio_sesion + DURACION_SESION_SEG
+      restante_seg(DURACION_SESION_SEG)
+      sesion_validada(TRUE)
+    }
+  )
+
   cerrar_sesion_pdu <- function(motivo = "tiempo_agotado") {
     if (sesion_cerrada) return(invisible(NULL))
     sesion_cerrada <<- TRUE
+    dni <- dni_sesion()
+    cuota <- if (nzchar(dni)) pdu_acceso_consultar_cuota(dni) else list(permitido = FALSE, restantes = 0)
+    msg <- if (cuota$permitido) {
+      sprintf("Su tiempo de consulta de 10 minutos ha finalizado. Le queda %d sesión disponible para el día de hoy.", cuota$restantes)
+    } else {
+      "Su tiempo de consulta de 10 minutos ha finalizado. Ha alcanzado el límite diario permitido (2 sesiones por día)."
+    }
     tryCatch({
       session$sendCustomMessage("pdu_session_expired", list(
         motivo = motivo,
-        mensaje = "Su tiempo de consulta de 10 minutos ha finalizado."
+        mensaje = msg
       ))
     }, error = function(e) NULL)
     session$close()
   }
-  
+
   sesion_vigente <- function() {
-    !sesion_cerrada && as.numeric(difftime(tiempo_limite_sesion, Sys.time(), units = "secs")) > 0
+    !sesion_cerrada && isTRUE(sesion_validada()) &&
+      !is.null(tiempo_limite_sesion) &&
+      as.numeric(difftime(tiempo_limite_sesion, Sys.time(), units = "secs")) > 0
   }
-  
+
   observe({
     invalidateLater(1000, session)
-    if (sesion_cerrada) return()
-    
+    if (sesion_cerrada || !isTRUE(sesion_validada()) || is.null(tiempo_limite_sesion)) return()
+
     n_seg <- max(0L, ceiling(as.numeric(difftime(tiempo_limite_sesion, Sys.time(), units = "secs"))))
     restante_seg(n_seg)
-    
+
     if (n_seg <= 0L) {
       cerrar_sesion_pdu("tiempo_agotado")
     } else if (n_seg <= 60L && !aviso_1min_mostrado) {
@@ -769,18 +795,19 @@ server <- function(input, output, session) {
       )
     }
   }, priority = 100)
-  
+
   output$ui_temporizador_sesion <- renderUI({
+    if (!isTRUE(sesion_validada()) || sesion_cerrada) return(NULL)
     seg <- restante_seg()
     if (is.null(seg)) return(NULL)
-    
+
     minutos <- seg %/% 60L
     segundos <- seg %% 60L
     tiempo_formateado <- sprintf("%02d:%02d", minutos, segundos)
-    
+
     es_critico <- seg <= 30L
     es_aviso <- seg <= 60L
-    
+
     clase_estado <- if (es_critico) {
       "timer-chip-danger"
     } else if (es_aviso) {
@@ -788,7 +815,7 @@ server <- function(input, output, session) {
     } else {
       "timer-chip-normal"
     }
-    
+
     span(
       id = "pdu_timer_chip",
       class = paste("timer-chip-pdu", clase_estado),
@@ -798,8 +825,7 @@ server <- function(input, output, session) {
       span(class = "timer-digits", tiempo_formateado)
     )
   })
-  
-  # Estado reactivo: Modo activo ("punto" o "poligono")
+
   modo_activo <- reactiveVal("punto")
   punto_actual <- reactiveVal(NULL)
   poligono_actual <- reactiveVal(NULL)

@@ -3414,7 +3414,7 @@
   },
   "files": {
     "app.R": {
-      "checksum": "65c099a0304044e92f5be65bb6dde376"
+      "checksum": "ac5b9ed54c5f29633b8a95bb4cae72fd"
     },
     "aprobacion/ORDENANZA MUNICIPAL N004-2025-A-MPA-C.pdf": {
       "checksum": "e0e85b5cae21688b7102b44bb13b7943"
@@ -3461,6 +3461,9 @@
     "R/local_data.R": {
       "checksum": "83e4ce41b031bff3289d305c6b086ba8"
     },
+    "R/mod_acceso_dni.R": {
+      "checksum": "18f35b58fae53bb1ddc6a39cdbd30458"
+    },
     "R/mod_catalogo_zonas.R": {
       "checksum": "1f25261cf595b4886306808c3b6742c7"
     },
@@ -3468,7 +3471,7 @@
       "checksum": "9b49b8fd58b0e3ac795e4348ac0f2202"
     },
     "R/mod_privacidad.R": {
-      "checksum": "14c24720f2a7ed31778b3c0aa75d2dc6"
+      "checksum": "03d6a4c15edc3cca920798add54bd4ca"
     },
     "R/optimizacion.R": {
       "checksum": "abff7f6bea6f335439e2238a2085bc97"

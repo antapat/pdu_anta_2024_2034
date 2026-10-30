@@ -31,7 +31,7 @@ mostrar_modal_privacidad <- function(es_inicio = FALSE) {
           class = "btn-consent-action btn-consent-accept px-4 py-2",
           style = "background-color: #174A3A !important; color: #FFFFFF !important; font-weight: 700 !important; border: 2px solid #0E3529 !important; border-radius: 8px;",
           onclick = "aceptarConsentimientoPDU();",
-          icon("circle-check"), " Aceptar y Entrar al GeoVisor"
+          icon("circle-check"), " Aceptar y Volver"
         )
       )
     ),
@@ -60,20 +60,16 @@ mostrar_modal_privacidad <- function(es_inicio = FALSE) {
       ),
 
       tags$h6(class = "fw-bold text-success mb-1", icon("landmark"), " 1. Entidad Responsable y Titularidad"),
-     # tags$p(class = "small text-secondary mb-3",
-     #    "Municipalidad Provincial de Anta — Gerencia de Desarrollo Urbano y Rural (GDUR). ",
-     #   "[Municipalidad Provincial de Anta](https://www.gob.pe/munianta)"
-     #  ),
-     tags$p(
-       class = "small text-secondary mb-3",
-       "Municipalidad Provincial de Anta — Gerencia de Desarrollo Urbano y Rural (GDUR). ",
-       tags$a(
-         href = "https://www.gob.pe/munianta",
-         "Municipalidad Provincial de Anta",
-         target = "_blank",
-         rel = "noopener noreferrer"
-       )
-     ),
+      tags$p(
+        class = "small text-secondary mb-3",
+        "Municipalidad Provincial de Anta — Gerencia de Desarrollo Urbano y Rural (GDUR). ",
+        tags$a(
+          href = "https://www.gob.pe/munianta",
+          "Municipalidad Provincial de Anta",
+          target = "_blank",
+          rel = "noopener noreferrer"
+        )
+      ),
 
       tags$h6(class = "fw-bold text-success mb-1", icon("database"), " 2. Finalidad del Tratamiento de Información y Cartografía Oficial"),
       tags$p(class = "small text-secondary mb-3",
@@ -83,10 +79,10 @@ mostrar_modal_privacidad <- function(es_inicio = FALSE) {
 
       tags$h6(class = "fw-bold text-success mb-1", icon("user-shield"), " 3. Principio de Minimización y Anonimización Técnica (Ley N° 29733)"),
       tags$ul(class = "small text-secondary mb-3",
-        tags$li(tags$b("Sin Dirección IP: "), "El servidor y la infraestructura de base de datos institucional NO almacenan direcciones IP ni identificadores de red de los visitantes."),
-        tags$li(tags$b("Sin Cookies Comerciales ni Terceros: "), "No se emplean cookies de seguimiento comercial, publicitario o de redes sociales (sin Google Analytics, Meta Pixel ni rastreadores externos)."),
-        tags$li(tags$b("Telemetría con Hash Criptográfico: "), "Al aceptar el ingreso, se genera un identificador aleatorio de sesión disociado con el único propósito de cuantificar visitas agregadas por día con fines estadísticos y de transparencia municipal."),
-        tags$li(tags$b("Consultas de Predios Seguras: "), "Los puntos geográficos o polígonos consultados por los ciudadanos se procesan en memoria volátil de sesión y se descartan al cerrar la consulta; no se vinculan a la identidad personal del usuario.")
+        tags$li(tags$b("Control de Acceso Equitativo: "), "Para garantizar disponibilidad y evitar saturación del servicio, se establece un límite de 2 sesiones diarias de 10 minutos por ciudadano mediante validación de DNI y fecha de emisión."),
+        tags$li(tags$b("Cifrado Hash de Validación: "), "La fecha de emisión del documento no se almacena en texto plano; se registra únicamente un hash unidireccional no reversible con fines de verificación."),
+        tags$li(tags$b("Sin Cookies Comerciales ni Rastreadores: "), "No se emplean cookies publicitarias ni de redes sociales (sin rastreadores externos ni cesión a terceros)."),
+        tags$li(tags$b("Consultas de Predios Seguras: "), "Las coordenadas o polígonos consultados por los ciudadanos se procesan en memoria volátil de sesión y no se asocian a datos comerciales.")
       ),
 
       tags$h6(class = "fw-bold text-success mb-1", icon("location-dot"), " 4. Función de Geolocalización (GPS Móvil)"),
@@ -96,7 +92,7 @@ mostrar_modal_privacidad <- function(es_inicio = FALSE) {
 
       tags$h6(class = "fw-bold text-success mb-1", icon("sliders"), " 5. Control de Consentimiento y Acceso"),
       tags$p(class = "small text-secondary mb-0",
-        "Para ingresar a los paneles del GeoVisor, presione de forma obligatoria el botón ", tags$b("«Aceptar y Entrar al GeoVisor»"), ". La plataforma garantiza el acceso pleno a la cartografía, zonificación e instrumentos normativos del PDU Anta 2024 - 2034."
+        "Para ingresar a los paneles del GeoVisor, complete la validación de identidad ciudadana. La plataforma garantiza el acceso pleno a la cartografía, zonificación e instrumentos normativos del PDU Anta 2024 - 2034."
       )
     )
   ))
@@ -119,12 +115,7 @@ mod_privacidad_link_ui <- function() {
 #' @param output Objeto output de Shiny
 #' @param session Objeto session de Shiny
 mod_privacidad_server <- function(input, output, session) {
-  # Apertura obligatoria al iniciar la aplicación
-  session$onFlushed(function() {
-    mostrar_modal_privacidad(es_inicio = TRUE)
-  }, once = TRUE)
-
-  # Apertura bajo demanda desde menú o botones de la app
+  # Apertura bajo demanda desde menú, enlaces o botones de la app
   observeEvent(input$abrir_modal_privacidad, {
     mostrar_modal_privacidad(es_inicio = FALSE)
   })

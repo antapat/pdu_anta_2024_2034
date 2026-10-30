@@ -40,3 +40,4 @@ try {
     }
     Write-Host "Servidor detenido correctamente." -ForegroundColor Green
 }
+

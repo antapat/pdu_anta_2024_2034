@@ -45,6 +45,7 @@ app_files <- c(
   "R/reglamento_utils.R",
   "R/supabase_utils.R",
   "R/mod_privacidad.R",
+  "R/mod_acceso_dni.R",
   "R/mod_informacion_pdu.R",
   "R/mod_catalogo_zonas.R",
   "data_pdu/pdu_preparado.rds",
