@@ -62,6 +62,10 @@ capas_mapa <- datos_pdu$capas_mapa
 if (is.null(capas_mapa)) capas_mapa <- pdu_capas_visualizacion(capas)
 zonificacion_bbox <- st_bbox(capas$zonificacion)
 vias_utm_compartidas <- st_transform(capas$vias, 32718)
+zonificacion_utm_compartida <- st_transform(capas$zonificacion, 32718)
+alta_tension_utm_compartida <- if (!is.null(capas$alta_tension) && nrow(capas$alta_tension) > 0) st_transform(capas$alta_tension, 32718) else NULL
+ferrocarril_utm_compartida <- if (!is.null(capas$ferrocarril) && nrow(capas$ferrocarril) > 0) st_transform(capas$ferrocarril, 32718) else NULL
+ambito_utm_compartida <- if (!is.null(capas$ambito) && nrow(capas$ambito) > 0) st_transform(capas$ambito, 32718) else NULL
 df_parametros <- datos_supabase$parametros
 message(
   "GeoVisor iniciado con fuente espacial ", datos_supabase$origen, ": ",
@@ -332,9 +336,27 @@ ui <- page_navbar(
     secondary = "#4C5E56",
     base_font = font_google("Inter")
   ),
-  header = tags$head(
-    tags$meta(name = "viewport", content = "width=device-width, initial-scale=1, shrink-to-fit=no"),
-    tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
+  header = tagList(
+    # Cortina y portal a pantalla completa de color institucional sólido (#0F2D24)
+    # Oculta al 100% el visor, navbar y mapa hasta que el ciudadano valida su acceso
+    tags$div(
+      id = "pdu_portal_gate",
+      class = "pdu-portal-gate",
+      tags$div(
+        class = "text-center text-white pdu-gate-loader",
+        tags$img(src = "escudo_muni_anta.png", height = "56px", alt = "Escudo Anta", onerror = "this.style.display='none'", style = "filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4)); margin-bottom: 12px;"),
+        tags$div(class = "fw-bold fs-5 text-uppercase", style = "letter-spacing: 0.5px;", "Municipalidad Provincial de Anta"),
+        tags$div(class = "small opacity-75 mb-3", "GeoVisor Plan de Desarrollo Urbano (2024 - 2034)"),
+        tags$div(
+          class = "spinner-border text-light spinner-border-sm",
+          role = "status",
+          tags$span(class = "visually-hidden", "Cargando...")
+        )
+      )
+    ),
+    tags$head(
+      tags$meta(name = "viewport", content = "width=device-width, initial-scale=1, shrink-to-fit=no"),
+      tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
     tags$script(HTML("
       function obtenerUbicacionGPS() {
         if (!navigator.geolocation) {
@@ -415,6 +437,22 @@ ui <- page_navbar(
           if (window.Shiny && Shiny.setInputValue) {
             Shiny.setInputValue('visitante_geovisor_id', visitorId, {priority: 'event'});
           }
+        }
+      }
+
+      function aceptarTerminosYProceder() {
+        localStorage.setItem('pdu_consent_decision', 'accepted');
+        var storageKey = 'pdu_anta_visitante_id';
+        var visitorId = localStorage.getItem(storageKey);
+        if (!visitorId) {
+          visitorId = (window.crypto && window.crypto.randomUUID)
+            ? window.crypto.randomUUID()
+            : 'pdu-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+          localStorage.setItem(storageKey, visitorId);
+        }
+        if (window.Shiny && Shiny.setInputValue) {
+          Shiny.setInputValue('visitante_geovisor_id', visitorId, {priority: 'event'});
+          Shiny.setInputValue('proceder_a_validacion_dni', new Date().getTime(), {priority: 'event'});
         }
       }
 
@@ -513,11 +551,22 @@ ui <- page_navbar(
         document.body.appendChild(backdrop);
       }
 
-      // Escuchar eventos de desconexión o expiración de Shiny
+      // Escuchar eventos de desconexión, expiración o desbloqueo del visor
       $(document).on('shiny:connected', function() {
         if (window.Shiny && Shiny.addCustomMessageHandler) {
           Shiny.addCustomMessageHandler('pdu_session_expired', function(data) {
             mostrarModalDesconexionPDU(data && data.mensaje ? data.mensaje : null);
+          });
+          Shiny.addCustomMessageHandler('pdu_desbloquear_visor', function(data) {
+            document.body.classList.add('pdu-visor-ready');
+            var gate = document.getElementById('pdu_portal_gate');
+            if (gate) {
+              gate.classList.add('unlocked');
+              setTimeout(function() {
+                gate.style.display = 'none';
+                window.dispatchEvent(new Event('resize'));
+              }, 500);
+            }
           });
         }
       });
@@ -536,9 +585,36 @@ ui <- page_navbar(
         }
       }
       .nav-link { font-weight: 600; }
+      
+      /* Habilitar scroll vertical en el contenedor de pestañas y páginas de contenido */
+      .tab-content {
+        flex: 1 1 auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      .tab-pane {
+        height: auto !important;
+        min-height: 100% !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      /* El visor del mapa ocupa la pantalla y gestiona su propio canvas */
+      .tab-pane#tab_visor,
+      .tab-pane[data-value='tab_visor'] {
+        height: 100% !important;
+        overflow: hidden !important;
+      }
+      /* El sidebar de consultas debe poder hacer scroll si los controles superan la altura de pantalla */
+      .bslib-sidebar-layout > .sidebar,
+      .bslib-sidebar-layout .sidebar-content {
+        overflow-y: auto !important;
+        max-height: 100% !important;
+        -webkit-overflow-scrolling: touch;
+      }
     "))
+    )
   ),
-  fillable = TRUE,
+  fillable = "tab_visor",
   
   # --- PESTAÑA PRINCIPAL: VISOR Y CONSULTAS ---
   nav_panel(
@@ -689,7 +765,10 @@ ui <- page_navbar(
     mod_catalogo_zonas_ui(total_subzonas = nrow(df_parametros)),
     
     # 3.2: INFORMACIÓN INSTITUCIONAL DEL PDU
-    mod_informacion_pdu_ui()
+    mod_informacion_pdu_ui(),
+    
+    # 3.3: TÉRMINOS Y CONDICIONES / POLÍTICA DE PRIVACIDAD
+    mod_privacidad_ui()
   ),
   # Espaciador, métricas de telemetría y Logo Oficial PDU al extremo derecho
   nav_spacer(),
@@ -738,13 +817,14 @@ server <- function(input, output, session) {
       tiempo_limite_sesion <<- tiempo_inicio_sesion + DURACION_SESION_SEG
       restante_seg(DURACION_SESION_SEG)
       sesion_validada(TRUE)
+      session$sendCustomMessage("pdu_desbloquear_visor", list())
     }
   )
 
   cerrar_sesion_pdu <- function(motivo = "tiempo_agotado") {
     if (sesion_cerrada) return(invisible(NULL))
     sesion_cerrada <<- TRUE
-    dni <- dni_sesion()
+    dni <- isolate(dni_sesion())
     cuota <- if (nzchar(dni)) pdu_acceso_consultar_cuota(dni) else list(permitido = FALSE, restantes = 0)
     msg <- if (cuota$permitido) {
       sprintf("Su tiempo de consulta de 10 minutos ha finalizado. Le queda %d sesión disponible para el día de hoy.", cuota$restantes)
@@ -761,7 +841,7 @@ server <- function(input, output, session) {
   }
 
   sesion_vigente <- function() {
-    !sesion_cerrada && isTRUE(sesion_validada()) &&
+    !sesion_cerrada && isTRUE(isolate(sesion_validada())) &&
       !is.null(tiempo_limite_sesion) &&
       as.numeric(difftime(tiempo_limite_sesion, Sys.time(), units = "secs")) > 0
   }
@@ -829,6 +909,8 @@ server <- function(input, output, session) {
   modo_activo <- reactiveVal("punto")
   punto_actual <- reactiveVal(NULL)
   poligono_actual <- reactiveVal(NULL)
+  cache_mapa_certificado_uri <- reactiveVal(NULL)
+  cache_mapa_key <- reactiveVal("")
   
   # ----------------------------------------------------------------------------
   # 2.1 RENDERIZADO BASE DEL MAPA LEAFLET
@@ -838,7 +920,7 @@ server <- function(input, output, session) {
   # Refuerzo reactivo: Asegurar encuadre a zonificación en cuanto el cliente móvil completa la conexión
   session$onFlushed(function() {
     zonif_bb <- zonificacion_bbox
-    leafletProxy("mapa_pdu") %>%
+    leafletProxy("mapa_pdu", session = session) %>%
       fitBounds(
         lng1 = unname(zonif_bb["xmin"]),
         lat1 = unname(zonif_bb["ymin"]),
@@ -854,6 +936,8 @@ server <- function(input, output, session) {
     validar_coordenada_punto(lng, lat)
     modo_activo("punto")
     poligono_actual(NULL)
+    cache_mapa_certificado_uri(NULL)
+    cache_mapa_key("")
     
     pt_4326 <- st_sfc(st_point(c(lng, lat)), crs = 4326)
     pt_utm <- st_transform(pt_4326, 32718)
@@ -1162,10 +1246,10 @@ server <- function(input, output, session) {
       paste0(paste(nom_f, collapse = " / "), " (Tramo: ", paste(tramo_f, collapse = ", "), ")")
     } else "" 
     
-    # 5. Sistema Vial Propuesto Intersectado o Colindante (Buffer estricto de 25 metros)
-    vias_utm <- vias_utm_compartidas
-    dists_vias <- as.numeric(st_distance(poly_utm, vias_utm))
-    idx_vias_cercanas <- which(dists_vias <= 25)
+    # 5. Sistema Vial Propuesto Intersectado o Colindante (Buffer estricto de 25 metros indexado)
+    res_vias <- pdu_buscar_vias_colindantes(poly_utm, vias_utm_compartidas, dist_max_m = 25.0)
+    idx_vias_cercanas <- res_vias$indices
+    dists_vias_sub <- res_vias$distancias
     
     tabla_vias_predio <- data.frame(
       SIS_VIAL = character(), COD_VIA_PR = character(), SECCION_VI = character(), DISTANCIA_M = numeric(), stringsAsFactors = FALSE
@@ -1173,21 +1257,25 @@ server <- function(input, output, session) {
     
     if (length(idx_vias_cercanas) > 0) {
       vias_sub <- capas$vias[idx_vias_cercanas, ]
-      d_sub <- dists_vias[idx_vias_cercanas]
       
       tabla_vias_predio <- data.frame(
         SIS_VIAL = vias_sub$SIS_VIAL,
         COD_VIA_PR = vias_sub$COD_VIA_PR,
         SECCION_VI = vias_sub$SECCION_VI,
-        DISTANCIA_M = round(d_sub, 3),
+        DISTANCIA_M = round(dists_vias_sub, 3),
         stringsAsFactors = FALSE
       ) %>%
         distinct(SIS_VIAL, COD_VIA_PR, SECCION_VI, .keep_all = TRUE) %>%
         arrange(DISTANCIA_M)
     }
     
-    # 6. Intersección con Zonificación (Múltiples zonas)
-    inter_zonif <- suppressWarnings(st_intersection(poly_4326, capas$zonificacion))
+    # 6. Intersección con Zonificación (Múltiples zonas con filtrado previo de candidatos)
+    idx_z_cand <- suppressMessages(st_intersects(poly_4326, capas$zonificacion)[[1]])
+    inter_zonif <- if (length(idx_z_cand) > 0) {
+      suppressWarnings(st_intersection(poly_4326, capas$zonificacion[idx_z_cand, , drop = FALSE]))
+    } else {
+      capas$zonificacion[0, , drop = FALSE]
+    }
     
     tabla_zonif <- data.frame(
       COD_ZONA = character(), COD_S_ZONA = character(), SUB_ZONA = character(),
@@ -1226,6 +1314,9 @@ server <- function(input, output, session) {
       }
     }
     
+    cache_mapa_certificado_uri(NULL)
+    cache_mapa_key("")
+    
     poligono_actual(list(
       poly_4326 = poly_4326,
       poly_utm = poly_utm,
@@ -1246,7 +1337,7 @@ server <- function(input, output, session) {
     ))
     
     bb <- st_bbox(poly_4326)
-    leafletProxy("mapa_pdu") %>%
+    leafletProxy("mapa_pdu", session = session) %>%
       clearGroup("consulta_activa") %>%
       addPolygons(
         data = poly_4326,
@@ -1354,21 +1445,6 @@ server <- function(input, output, session) {
   
   observeEvent(input$btn_ir_a_consultar, {
     nav_select("main_navbar", "tab_visor")
-  })
-  
-  observeEvent(input$btn_ir_a_buzon_con_predio, {
-    nav_select("main_navbar", "tab_buzon")
-    # Pre-cargar ubicación del predio en el buzón
-    modo <- modo_activo()
-    if (modo == "punto" && !is.null(punto_actual())) {
-      pt <- punto_actual()
-      updateTextInput(session, "in_buzon_ubicacion",
-                      value = paste0("Consulta Puntual en UTM: E ", pt$este, " | N ", pt$norte, " (Lat: ", round(pt$lat, 5), ", Lng: ", round(pt$lng, 5), ")"))
-    } else if (modo == "poligono" && !is.null(poligono_actual())) {
-      poly <- poligono_actual()
-      updateTextInput(session, "in_buzon_ubicacion",
-                      value = paste0("Polígono de Lote: ", poly$area_m2, " m² (Distrito: ", paste(poly$distritos, collapse = ", "), ")"))
-    }
   })
   
   # Botón de descarga en la cabecera de la pestaña del certificado
@@ -1611,11 +1687,10 @@ server <- function(input, output, session) {
         paste0(paste(nom_f, collapse = " / "), " (Tramo: ", paste(tramo_f, collapse = ", "), ")")
       } else "" 
       
-      # Vía propuesta colindante (Buffer estricto 25m)
-      vias_utm <- vias_utm_compartidas
-      dists_v <- as.numeric(st_distance(pt_data$geom_utm, vias_utm))
-      idx_min_v <- which.min(dists_v)
-      min_dist_v <- dists_v[idx_min_v]
+      # Vía propuesta colindante (Buffer estricto 25m indexado)
+      res_v <- pdu_buscar_vias_colindantes(pt_data$geom_utm, vias_utm_compartidas, dist_max_m = 25.0)
+      idx_min_v <- res_v$min_idx
+      min_dist_v <- res_v$min_dist
       
       sis_vial_txt <- "No colindante / No identificado"
       cod_via_txt <- "N/A"
@@ -1646,7 +1721,15 @@ server <- function(input, output, session) {
         if (length(m_idx) > 0) p_norm <- pdu_buscar_parametros(df_parametros, cod_s_zona)[[1]]
       }
       
-      mapa_img_uri <- generar_mapa_certificado(pt_sf, es_poligono = FALSE, capas_pdu = capas, pal_subzonas = colores_subzonas, ancho_in = 7.6, alto_in = 8.85)
+      clave_mapa <- paste0("pt_", round(pt_data$lng, 6), "_", round(pt_data$lat, 6))
+      mapa_img_uri <- if (identical(cache_mapa_key(), clave_mapa) && !is.null(cache_mapa_certificado_uri())) {
+        cache_mapa_certificado_uri()
+      } else {
+        uri <- generar_mapa_certificado(pt_sf, es_poligono = FALSE, capas_pdu = capas, pal_subzonas = colores_subzonas, ancho_in = 7.6, alto_in = 8.85)
+        cache_mapa_key(clave_mapa)
+        cache_mapa_certificado_uri(uri)
+        uri
+      }
       
       doc_html <- tags$html(
         tags$head(
@@ -1745,7 +1828,15 @@ server <- function(input, output, session) {
     } else {
       # CERTIFICADO COMPLETO DE PREDIO CON ZONIFICACIÓN MÚLTIPLE, VÍAS Y MAPA
       poly_data <- poligono_actual()
-      mapa_img_uri <- generar_mapa_certificado(poly_data$poly_4326, es_poligono = TRUE, capas_pdu = capas, pal_subzonas = colores_subzonas, ancho_in = 7.6, alto_in = 8.35)
+      clave_mapa <- paste0("poly_", round(poly_data$area_m2, 2), "_", round(poly_data$perimetro_m, 2))
+      mapa_img_uri <- if (identical(cache_mapa_key(), clave_mapa) && !is.null(cache_mapa_certificado_uri())) {
+        cache_mapa_certificado_uri()
+      } else {
+        uri <- generar_mapa_certificado(poly_data$poly_4326, es_poligono = TRUE, capas_pdu = capas, pal_subzonas = colores_subzonas, ancho_in = 7.6, alto_in = 8.35)
+        cache_mapa_key(clave_mapa)
+        cache_mapa_certificado_uri(uri)
+        uri
+      }
       
       doc_html <- tags$html(
         tags$head(
@@ -1905,10 +1996,9 @@ server <- function(input, output, session) {
         paste0(paste(nom_f, collapse = " / "), " (Tramo: ", paste(tramo_f, collapse = ", "), ")")
       } else "" 
       
-      vias_utm <- vias_utm_compartidas
-      dists_v <- as.numeric(st_distance(pt_data$geom_utm, vias_utm))
-      idx_min_v <- which.min(dists_v)
-      min_dist_v <- dists_v[idx_min_v]
+      res_v <- pdu_buscar_vias_colindantes(pt_data$geom_utm, vias_utm_compartidas, dist_max_m = 25.0)
+      idx_min_v <- res_v$min_idx
+      min_dist_v <- res_v$min_dist
       
       tabla_vias <- data.frame(
         SIS_VIAL = character(), COD_VIA_PR = character(),
@@ -1954,7 +2044,21 @@ server <- function(input, output, session) {
         )
       }
       
-      generar_mapa_certificado(pt_sf, es_poligono = FALSE, ruta_salida_png = mapa_png_rel, capas_pdu = capas, pal_subzonas = colores_subzonas, ancho_in = 7.6, alto_in = 8.85)
+      # Reutilizar mapa en caché para evitar regeneración costosa con ggplot
+      mapa_ok <- FALSE
+      uri_cached <- cache_mapa_certificado_uri()
+      if (!is.null(uri_cached) && startsWith(uri_cached, "data:image/png;base64,")) {
+        tryCatch({
+          b64 <- sub("^data:image/png;base64,", "", uri_cached)
+          if (requireNamespace("jsonlite", quietly = TRUE)) {
+            writeBin(jsonlite::base64_dec(b64), mapa_png_rel)
+            mapa_ok <- file.exists(mapa_png_rel) && file.info(mapa_png_rel)$size > 1000
+          }
+        }, error = function(e) NULL)
+      }
+      if (!mapa_ok) {
+        generar_mapa_certificado(pt_sf, es_poligono = FALSE, ruta_salida_png = mapa_png_rel, capas_pdu = capas, pal_subzonas = colores_subzonas, ancho_in = 7.6, alto_in = 8.85)
+      }
       
       payload <- list(
         codigo_consulta = codigo_consulta,
@@ -1984,7 +2088,21 @@ server <- function(input, output, session) {
       
     } else {
       poly_data <- poligono_actual()
-      generar_mapa_certificado(poly_data$poly_4326, es_poligono = TRUE, ruta_salida_png = mapa_png_rel, capas_pdu = capas, pal_subzonas = colores_subzonas, ancho_in = 7.6, alto_in = 8.35)
+      # Reutilizar mapa en caché para evitar regeneración costosa con ggplot
+      mapa_ok <- FALSE
+      uri_cached <- cache_mapa_certificado_uri()
+      if (!is.null(uri_cached) && startsWith(uri_cached, "data:image/png;base64,")) {
+        tryCatch({
+          b64 <- sub("^data:image/png;base64,", "", uri_cached)
+          if (requireNamespace("jsonlite", quietly = TRUE)) {
+            writeBin(jsonlite::base64_dec(b64), mapa_png_rel)
+            mapa_ok <- file.exists(mapa_png_rel) && file.info(mapa_png_rel)$size > 1000
+          }
+        }, error = function(e) NULL)
+      }
+      if (!mapa_ok) {
+        generar_mapa_certificado(poly_data$poly_4326, es_poligono = TRUE, ruta_salida_png = mapa_png_rel, capas_pdu = capas, pal_subzonas = colores_subzonas, ancho_in = 7.6, alto_in = 8.35)
+      }
       
       payload <- list(
         codigo_consulta = codigo_consulta,
@@ -2032,11 +2150,18 @@ server <- function(input, output, session) {
       if (!file.copy(qmd_path, render_qmd, overwrite = TRUE)) {
         stop("No se pudo preparar la plantilla temporal para generar la constancia.")
       }
-      # La plantilla carga el mapa, los logotipos y funciones de R mediante rutas relativas.
-      for (recurso in c("outputs", "www", "logo", "R")) {
+      # La plantilla carga los logotipos y funciones de R mediante rutas relativas.
+      for (recurso in c("www", "logo", "R")) {
         if (dir.exists(recurso)) {
           file.copy(recurso, render_dir, recursive = TRUE, copy.mode = FALSE)
         }
+      }
+      # Principio de Confidencialidad y Minimización (Ley N° 29733 / RGPD):
+      # En lugar de copiar todo el directorio 'outputs' (que contiene bitácoras y registros de sesión),
+      # copiamos estrictamente la captura cartográfica requerida para la constancia.
+      dir.create(file.path(render_dir, "outputs"), recursive = TRUE, showWarnings = FALSE)
+      if (file.exists(mapa_png_rel)) {
+        file.copy(mapa_png_rel, file.path(render_dir, mapa_png_rel), overwrite = TRUE)
       }
       saveRDS(payload, temp_rds)
 
@@ -2138,12 +2263,14 @@ server <- function(input, output, session) {
       paste0("Ficha_Informativa_PDU_Anta_", format(Sys.time(), "%Y%m%d_%H%M"), ".pdf")
     },
     content = function(file) {
-      if (!sesion_vigente()) {
-        cerrar_sesion_pdu("tiempo_agotado")
-        stop("El tiempo de consulta asignado ha finalizado.")
-      }
-      generar_constancia_pdf(file)
-      metricas_supa(supabase_registrar_constancia())
+      isolate({
+        if (!sesion_vigente()) {
+          cerrar_sesion_pdu("tiempo_agotado")
+          stop("El tiempo de consulta asignado ha finalizado.")
+        }
+        generar_constancia_pdf(file)
+        metricas_supa(supabase_registrar_constancia())
+      })
     },
     contentType = "application/pdf"
   )
@@ -2153,12 +2280,14 @@ server <- function(input, output, session) {
       paste0("Ficha_Informativa_PDU_Anta_", format(Sys.time(), "%Y%m%d_%H%M"), ".pdf")
     },
     content = function(file) {
-      if (!sesion_vigente()) {
-        cerrar_sesion_pdu("tiempo_agotado")
-        stop("El tiempo de consulta asignado ha finalizado.")
-      }
-      generar_constancia_pdf(file)
-      metricas_supa(supabase_registrar_constancia())
+      isolate({
+        if (!sesion_vigente()) {
+          cerrar_sesion_pdu("tiempo_agotado")
+          stop("El tiempo de consulta asignado ha finalizado.")
+        }
+        generar_constancia_pdf(file)
+        metricas_supa(supabase_registrar_constancia())
+      })
     },
     contentType = "application/pdf"
   )
@@ -2283,92 +2412,6 @@ server <- function(input, output, session) {
           if ("creado_en" %in% names(av)) tags$small(class = "text-muted", paste("Publicado:", substr(as.character(av$creado_en), 1, 10)))
         )
       })
-    )
-  })
-  
-  # Auto-llenar coordenadas en el formulario de Buzón
-  observeEvent(input$btn_autollenar_ubicacion_buzon, {
-    modo <- modo_activo()
-    if (modo == "punto" && !is.null(punto_actual())) {
-      pt <- punto_actual()
-      updateTextInput(session, "in_buzon_ubicacion",
-                      value = paste0("Punto UTM: Este ", pt$este, ", Norte ", pt$norte, " (Zona 18S)"))
-      showNotification("Ubicación cargada desde la consulta puntual.", type = "message", duration = 3)
-    } else if (modo == "poligono" && !is.null(poligono_actual())) {
-      poly <- poligono_actual()
-      updateTextInput(session, "in_buzon_ubicacion",
-                      value = paste0("Polígono de ", poly$area_m2, " m² en ", paste(poly$distritos, collapse = ", ")))
-      showNotification("Ubicación cargada desde el polígono consultado.", type = "message", duration = 3)
-    } else {
-      showNotification("Primero realice una consulta en el mapa para auto-llenar las coordenadas.", type = "warning", duration = 4)
-    }
-  })
-  
-  # Envío de reporte u observación ciudadana a Supabase
-  feedback_msg <- reactiveVal(NULL)
-  
-  observeEvent(input$btn_enviar_buzon, {
-    nombre <- trimws(input$in_buzon_nombre)
-    contacto <- trimws(input$in_buzon_contacto)
-    tipo <- input$in_buzon_tipo
-    ubicacion <- trimws(input$in_buzon_ubicacion)
-    mensaje <- trimws(input$in_buzon_mensaje)
-    
-    if (!nzchar(nombre)) {
-      feedback_msg(list(tipo = "error", texto = "Por favor ingrese sus nombres y apellidos."))
-      return()
-    }
-    if (!nzchar(contacto)) {
-      feedback_msg(list(tipo = "error", texto = "Por favor ingrese un correo o teléfono de contacto."))
-      return()
-    }
-    if (!nzchar(mensaje) || nchar(mensaje) < 10) {
-      feedback_msg(list(tipo = "error", texto = "El mensaje debe contener una descripción de al menos 10 caracteres."))
-      return()
-    }
-    
-    withProgress(message = "Registrando observación ciudadana...", value = 0.5, {
-      res <- supabase_enviar_reporte_ciudadano(
-        nombre_ciudadano = nombre,
-        contacto = contacto,
-        tipo_observacion = tipo,
-        ubicacion_predio = if (nzchar(ubicacion)) ubicacion else "No especificada",
-        mensaje = mensaje
-      )
-      
-      if (isTRUE(res$ok)) {
-        cod_ticket <- if (!is.null(res$ticket)) res$ticket else paste0("PDU-OBS-", format(Sys.time(), "%y%m%d%H%M"))
-        feedback_msg(list(
-          tipo = "success",
-          texto = paste0("¡Observación registrada con éxito! Código asignado: ", cod_ticket, ". La Gerencia de Desarrollo Urbano revisará su reporte.")
-        ))
-        updateTextInput(session, "in_buzon_nombre", value = "")
-        updateTextInput(session, "in_buzon_contacto", value = "")
-        updateTextInput(session, "in_buzon_ubicacion", value = "")
-        updateTextAreaInput(session, "in_buzon_mensaje", value = "")
-        showNotification(
-          if (identical(res$origen, "local")) "Observación registrada exitosamente en modo local." else "Observación enviada exitosamente.",
-          type = "message",
-          duration = 5
-        )
-      } else {
-        feedback_msg(list(
-          tipo = "error",
-          texto = paste("Error al registrar:", res$error)
-        ))
-      }
-    })
-  })
-  
-  output$ui_feedback_buzon <- renderUI({
-    fb <- feedback_msg()
-    if (is.null(fb)) return(NULL)
-    
-    clase <- if (fb$tipo == "success") "alert alert-success" else "alert alert-danger"
-    icono <- if (fb$tipo == "success") "circle-check" else "triangle-exclamation"
-    div(
-      class = paste(clase, "py-2 px-3 small mt-2"),
-      icon(icono), " ", fb$texto
     )
   })
   

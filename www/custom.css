@@ -1016,35 +1016,6 @@ nav.navbar-static-top {
 }
 
 /* --------------------------------------------------------------------------
-   ESTILOS DE LA PESTAÑA BUZÓN CIUDADANO (SUPABASE)
-   -------------------------------------------------------------------------- */
-.card-buzon {
-  background: #FFFFFF;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-card);
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-}
-
-.card-buzon-header {
-  background: linear-gradient(135deg, var(--verde-inst), #0F2D24);
-  color: #FFFFFF;
-  padding: 24px 30px;
-  border-bottom: 3px solid var(--dorado-inst);
-}
-
-.badge-cloud-tag {
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(4px);
-  color: #FFFFFF;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.76rem;
-  font-weight: 600;
-}
-
-/* --------------------------------------------------------------------------
    HERO BANNER DE INFORMACIÓN INSTITUCIONAL
    -------------------------------------------------------------------------- */
 .hero-pdu {
@@ -1719,4 +1690,176 @@ html, body {
   box-shadow: 0 6px 18px rgba(23, 74, 58, 0.38) !important;
   color: #FFFFFF !important;
 }
+
+/* ==========================================================================
+   SCROLL VERTICAL RESPONSIVO PARA TODAS LAS PÁGINAS Y CONTENIDOS
+   ========================================================================== */
+
+/* Contenedor de pestañas bslib */
+.tab-content {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Todas las páginas secundarias permiten scroll natural */
+.tab-pane {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Excepción: El visor de mapas ocupa la pantalla completa */
+.tab-pane#tab_visor,
+.tab-pane[data-value="tab_visor"] {
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* El panel lateral del visor tiene scroll independiente */
+.bslib-sidebar-layout > .sidebar,
+.bslib-sidebar-layout .sidebar-content {
+  overflow-y: auto !important;
+  max-height: 100% !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Asegurar que las tarjetas y contenedores interiores se desplieguen por completo */
+.tab-pane .container-fluid,
+.tab-pane .container {
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* ==========================================================================
+   PORTAL INSTITUCIONAL DE ACCESO CIUDADANO Y ONBOARDING ESTRUCTURADO
+   ========================================================================== */
+
+/* ==========================================================================
+   CORTINA Y PORTAL DE ACCESO A PANTALLA COMPLETA (COLOR SÓLIDO INSTITUCIONAL)
+   ========================================================================== */
+
+/* Cortina opaca a pantalla completa de color institucional que cubre al 100% el visor al arrancar */
+.pdu-portal-gate {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: #0F2D24 !important; /* Color sólido institucional */
+  z-index: 1060 !important; /* Por encima del navbar (1050) y del mapa */
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: all !important;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s ease;
+}
+
+.pdu-portal-gate.unlocked {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Fondo bloqueante a pantalla completa del color sólido institucional (#0F2D24) */
+body:not(.pdu-visor-ready) .modal-backdrop.show {
+  background-color: #0F2D24 !important;
+  opacity: 1 !important;
+  z-index: 1070 !important;
+  transition: opacity 0.35s ease-in-out !important;
+}
+
+body.pdu-visor-ready .modal-backdrop.show {
+  background-color: rgba(15, 45, 36, 0.65) !important;
+  opacity: 1 !important;
+  z-index: 1070 !important;
+  transition: opacity 0.35s ease-in-out !important;
+}
+
+#shiny-modal {
+  z-index: 1080 !important;
+}
+
+/* Contenedor y tarjeta de los modales de ingreso */
+#shiny-modal .modal-dialog {
+  margin: 1.75rem auto;
+  max-width: 760px;
+}
+
+#shiny-modal .modal-dialog.modal-md {
+  max-width: 520px;
+}
+
+#shiny-modal .modal-content {
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+  background: #FFFFFF !important;
+  overflow: hidden !important;
+  animation: pduModalEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pduModalEntrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.97) translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Barra decorativa multicolor estilo SUNARP / Institucional */
+.sunarp-multibar {
+  height: 4px;
+  width: 140px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #00A896 25%, #028090 25% 50%, #F4A261 50% 75%, #E63946 75%);
+}
+
+/* Stepper de progreso 2 Pasos estructurado */
+.pdu-stepper-container {
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.pdu-stepper-container .badge {
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.2px;
+}
+
+/* Animación de pulso para reloj límite */
+.animate-pulse {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Scrollbar estilizada para el cuerpo de términos y condiciones */
+.privacy-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.privacy-modal-body::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 4px;
+}
+.privacy-modal-body::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+.privacy-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+
 

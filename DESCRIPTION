@@ -13,6 +13,7 @@ Imports:
     sf,
     dplyr,
     htmltools,
+    htmlwidgets,
     ggplot2,
     knitr,
     quarto,
@@ -21,6 +22,7 @@ Imports:
     DBI,
     RPostgres
 Suggests:
+    digest,
     pagedown,
     testthat,
     rsconnect,

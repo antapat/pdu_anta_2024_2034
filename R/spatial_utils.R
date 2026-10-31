@@ -47,12 +47,57 @@ normalizar_poligono_predio <- function(objeto_sf, max_entidades = 200, max_area_
   predio
 }
 
+#' Calcula el área de intersección neta (m²) entre un predio y una capa espacial,
+#' optimizado mediante filtrado previo por índice espacial (R-tree) para evitar
+#' operaciones de unión sobre toda la capa cuando no hay contacto.
 area_interseccion_unica_m2 <- function(predio_4326, capa_4326) {
   if (is.null(capa_4326) || nrow(capa_4326) == 0) return(0)
-  capa_unida <- sf::st_sf(geometry = sf::st_union(sf::st_geometry(capa_4326)))
-  inter <- suppressWarnings(sf::st_intersection(predio_4326, capa_unida))
-  if (nrow(inter) == 0 || all(sf::st_is_empty(inter))) return(0)
+  
+  # 1. Filtrado espacial indexado rápido antes de unir geometrías
+  idx <- suppressMessages(sf::st_intersects(predio_4326, capa_4326, sparse = TRUE)[[1]])
+  if (length(idx) == 0) return(0)
+  
+  capa_sub <- capa_4326[idx, , drop = FALSE]
+  capa_unida <- if (nrow(capa_sub) == 1) {
+    sf::st_geometry(capa_sub)
+  } else {
+    sf::st_union(sf::st_geometry(capa_sub))
+  }
+  
+  inter <- suppressWarnings(sf::st_intersection(sf::st_geometry(predio_4326), capa_unida))
+  if (length(inter) == 0 || all(sf::st_is_empty(inter))) return(0)
   sum(as.numeric(sf::st_area(sf::st_transform(inter, CRS_METRICO_ANTA))), na.rm = TRUE)
+}
+
+#' Busca vías colindantes a una entidad espacial dentro de una distancia máxima (en metros).
+#' Utiliza filtrado espacial indexado con buffer para evitar calcular distancias sobre toda la red vial.
+#' @param geom_utm Geometría (punto o polígono) en CRS métrico (32718)
+#' @param vias_utm Capa de vías en CRS métrico (32718)
+#' @param dist_max_m Distancia máxima de búsqueda en metros (por defecto 25 m)
+#' @return Lista con índices de vías cercanas, distancias calculadas, índice mínimo y distancia mínima
+pdu_buscar_vias_colindantes <- function(geom_utm, vias_utm, dist_max_m = 25.0) {
+  if (is.null(vias_utm) || nrow(vias_utm) == 0) {
+    return(list(indices = integer(0), distancias = numeric(0), min_idx = NA_integer_, min_dist = Inf))
+  }
+  buf <- sf::st_buffer(geom_utm, dist_max_m)
+  candidatos <- suppressMessages(sf::st_intersects(buf, vias_utm)[[1]])
+  if (length(candidatos) == 0) {
+    return(list(indices = integer(0), distancias = numeric(0), min_idx = NA_integer_, min_dist = Inf))
+  }
+  dists_cand <- as.numeric(sf::st_distance(geom_utm, vias_utm[candidatos, , drop = FALSE]))
+  validos <- which(dists_cand <= dist_max_m)
+  if (length(validos) == 0) {
+    return(list(indices = integer(0), distancias = numeric(0), min_idx = NA_integer_, min_dist = Inf))
+  }
+  indices <- candidatos[validos]
+  distancias <- dists_cand[validos]
+  idx_min_rel <- which.min(distancias)
+  list(
+    indices = indices,
+    distancias = distancias,
+    min_idx = indices[idx_min_rel],
+    min_dist = distancias[idx_min_rel]
+  )
 }
 
 extraer_zip_seguro <- function(archivo_zip, destino, max_archivos = 100, max_descomprimido = 100 * 1024^2) {

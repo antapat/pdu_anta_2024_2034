@@ -5,7 +5,7 @@
 # ==============================================================================
 
 suppressPackageStartupMessages({
-  library(jsonlite)
+  if (requireNamespace("jsonlite", quietly = TRUE)) library(jsonlite)
 })
 
 # Cargar estilos territoriales desacoplados si existen
@@ -157,41 +157,6 @@ supabase_registrar_consulta <- function(tipo_consulta,
   }, error = function(e) NULL)
   
   TRUE
-}
-
-supabase_enviar_reporte_ciudadano <- function(nombre_ciudadano,
-                                              contacto,
-                                              tipo_observacion = "OBSERVACION",
-                                              ubicacion_predio = "No especificada",
-                                              contenido = "",
-                                              latitud = NA_real_,
-                                              longitud = NA_real_,
-                                              mensaje = NULL,
-                                              tipo = NULL,
-                                              ubicacion = NULL) {
-  if (!is.null(mensaje) && !nzchar(contenido)) contenido <- mensaje
-  if (!is.null(tipo) && identical(tipo_observacion, "OBSERVACION")) tipo_observacion <- tipo
-  if (!is.null(ubicacion) && identical(ubicacion_predio, "No especificada")) ubicacion_predio <- ubicacion
-
-  dir.create("outputs", showWarnings = FALSE, recursive = TRUE)
-  rep <- list(
-    fecha = format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"),
-    nombre = nombre_ciudadano,
-    contacto = contacto,
-    tipo = tipo_observacion,
-    ubicacion = ubicacion_predio,
-    contenido = contenido,
-    lat = latitud,
-    lon = longitud
-  )
-  tryCatch({
-    cat(jsonlite::toJSON(rep, auto_unbox = TRUE), "\n",
-        file = file.path("outputs", "consultas_local.log"),
-        append = TRUE)
-    list(ok = TRUE, origen = "local", mensaje = "Observación ciudadana registrada localmente con éxito.")
-  }, error = function(e) {
-    list(ok = FALSE, mensaje = conditionMessage(e))
-  })
 }
 
 supabase_obtener_avisos <- function(limite = 4) {

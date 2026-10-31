@@ -85,18 +85,38 @@ generar_mapa_certificado <- function(geom_sf, es_poligono = TRUE, ruta_salida_pn
     class(bbox_utm) <- "bbox"
     attr(bbox_utm, "crs") <- st_crs(32718)
     
-    # Capas transformadas a UTM 18S para recorte y renderizado cartográfico exacto
-    zonif_utm <- if (!is.null(capas_pdu$zonificacion) && nrow(capas_pdu$zonificacion) > 0) st_transform(capas_pdu$zonificacion, 32718) else NULL
-    vias_utm <- if (!is.null(capas_pdu$vias) && nrow(capas_pdu$vias) > 0) st_transform(capas_pdu$vias, 32718) else NULL
-    at_utm <- if (!is.null(capas_pdu$alta_tension) && nrow(capas_pdu$alta_tension) > 0) st_transform(capas_pdu$alta_tension, 32718) else NULL
-    ferro_utm <- if (!is.null(capas_pdu$ferrocarril) && nrow(capas_pdu$ferrocarril) > 0) st_transform(capas_pdu$ferrocarril, 32718) else NULL
-    ambito_utm <- if (!is.null(capas_pdu$ambito) && nrow(capas_pdu$ambito) > 0) st_transform(capas_pdu$ambito, 32718) else NULL
+    # Capas en UTM 18S optimizadas: si ya existen precalculadas en memoria, se reutilizan.
+    # De lo contrario, se filtran candidatos con índice espacial R-tree antes de proyectar,
+    # evitando transformar miles de geometrías completas en cada consulta o reporte.
+    bbox_sfc_utm <- sf::st_as_sfc(bbox_utm)
+    bbox_sfc_4326 <- sf::st_transform(bbox_sfc_utm, 4326)
     
-    zonif_crop <- if (!is.null(zonif_utm)) suppressWarnings(st_crop(zonif_utm, bbox_utm)) else sf::st_sf(geometry = sf::st_sfc(crs = 32718))
-    vias_crop <- if (!is.null(vias_utm)) suppressWarnings(st_crop(vias_utm, bbox_utm)) else sf::st_sf(geometry = sf::st_sfc(crs = 32718))
-    at_crop <- if (!is.null(at_utm)) suppressWarnings(st_crop(at_utm, bbox_utm)) else sf::st_sf(geometry = sf::st_sfc(crs = 32718))
-    ferro_crop <- if (!is.null(ferro_utm)) suppressWarnings(st_crop(ferro_utm, bbox_utm)) else sf::st_sf(geometry = sf::st_sfc(crs = 32718))
-    ambito_crop <- if (!is.null(ambito_utm)) suppressWarnings(st_crop(ambito_utm, bbox_utm)) else sf::st_sf(geometry = sf::st_sfc(crs = 32718))
+    recortar_capa_optimizada <- function(capa_4326, capa_utm_precalculada = NULL) {
+      if (!is.null(capa_utm_precalculada) && nrow(capa_utm_precalculada) > 0) {
+        cand <- suppressMessages(sf::st_intersects(bbox_sfc_utm, capa_utm_precalculada)[[1]])
+        if (length(cand) == 0) return(sf::st_sf(geometry = sf::st_sfc(crs = 32718)))
+        return(suppressWarnings(sf::st_crop(capa_utm_precalculada[cand, , drop = FALSE], bbox_utm)))
+      }
+      if (is.null(capa_4326) || nrow(capa_4326) == 0) {
+        return(sf::st_sf(geometry = sf::st_sfc(crs = 32718)))
+      }
+      cand <- suppressMessages(sf::st_intersects(bbox_sfc_4326, capa_4326)[[1]])
+      if (length(cand) == 0) return(sf::st_sf(geometry = sf::st_sfc(crs = 32718)))
+      sub_utm <- sf::st_transform(capa_4326[cand, , drop = FALSE], 32718)
+      suppressWarnings(sf::st_crop(sub_utm, bbox_utm))
+    }
+    
+    zonif_utm_global <- get0("zonificacion_utm_compartida", envir = .GlobalEnv, ifnotfound = NULL)
+    vias_utm_global <- get0("vias_utm_compartidas", envir = .GlobalEnv, ifnotfound = NULL)
+    at_utm_global <- get0("alta_tension_utm_compartida", envir = .GlobalEnv, ifnotfound = NULL)
+    ferro_utm_global <- get0("ferrocarril_utm_compartida", envir = .GlobalEnv, ifnotfound = NULL)
+    ambito_utm_global <- get0("ambito_utm_compartida", envir = .GlobalEnv, ifnotfound = NULL)
+    
+    zonif_crop  <- recortar_capa_optimizada(capas_pdu$zonificacion, zonif_utm_global)
+    vias_crop   <- recortar_capa_optimizada(capas_pdu$vias, vias_utm_global)
+    at_crop     <- recortar_capa_optimizada(capas_pdu$alta_tension, at_utm_global)
+    ferro_crop  <- recortar_capa_optimizada(capas_pdu$ferrocarril, ferro_utm_global)
+    ambito_crop <- recortar_capa_optimizada(capas_pdu$ambito, ambito_utm_global)
     
     p <- ggplot()
     

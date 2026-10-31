@@ -55,14 +55,4 @@ test_that("el emulador de métricas local opera en outputs/", {
   
   m1 <- supabase_registrar_visita("test_local_browser")
   expect_true(m1$visitas_total >= m0$visitas_total)
-  
-  rep <- supabase_enviar_reporte_ciudadano(
-    nombre_ciudadano = "Test Usuario",
-    contacto = "test@anta.gob.pe",
-    tipo = "OBSERVACION",
-    ubicacion = "Plaza de Armas",
-    mensaje = "Mensaje de prueba en entorno local"
-  )
-  expect_true(isTRUE(rep$ok))
-  expect_identical(rep$origen, "local")
 })

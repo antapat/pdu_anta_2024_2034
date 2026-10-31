@@ -17,8 +17,14 @@ if (-not (Test-Path $cloudflared)) {
     curl.exe -L -o $cloudflared "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
 }
 
+$rscriptCmd = "Rscript.exe"
+if (-not (Get-Command "Rscript.exe" -ErrorAction SilentlyContinue)) {
+    $rCandidate = Get-ChildItem "C:\Program Files\R" -Filter "Rscript.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+    if ($rCandidate) { $rscriptCmd = $rCandidate }
+}
+
 Write-Host "[1/2] Iniciando el GeoVisor en http://127.0.0.1:$Puerto ..." -ForegroundColor Yellow
-$rProcess = Start-Process -FilePath "Rscript.exe" -ArgumentList "-e `"shiny::runApp(appDir='.', host='127.0.0.1', port=$Puerto)`"" -PassThru -NoNewWindow
+$rProcess = Start-Process -FilePath $rscriptCmd -ArgumentList "-e `"shiny::runApp(appDir='.', host='127.0.0.1', port=$Puerto)`"" -PassThru -NoNewWindow
 
 Start-Sleep -Seconds 3
 

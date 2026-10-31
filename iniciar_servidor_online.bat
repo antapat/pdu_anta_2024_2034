@@ -13,8 +13,17 @@ if not exist "tools\cloudflared.exe" (
     curl.exe -L -o "tools\cloudflared.exe" "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
 )
 
+set "RSCRIPT_CMD=Rscript.exe"
+where Rscript.exe >nul 2>&1
+if %ERRORLEVEL% neq 0 (
+    for /d %%D in ("C:\Program Files\R\R-*") do (
+        if exist "%%D\bin\x64\Rscript.exe" set "RSCRIPT_CMD=%%D\bin\x64\Rscript.exe"
+        if exist "%%D\bin\Rscript.exe" set "RSCRIPT_CMD=%%D\bin\Rscript.exe"
+    )
+)
+
 echo [1/2] Iniciando el GeoVisor en segundo plano (puerto 3838)...
-start "" /B Rscript.exe -e "shiny::runApp(appDir='.', host='127.0.0.1', port=3838)"
+start "" /B "%RSCRIPT_CMD%" -e "shiny::runApp(appDir='.', host='127.0.0.1', port=3838)"
 timeout /t 3 /nobreak >nul
 
 echo [2/2] Conectando tunel HTTPS seguro con Cloudflare...

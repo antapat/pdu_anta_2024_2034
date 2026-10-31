@@ -47,39 +47,6 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
         class = "card shadow-sm border-0 p-3 p-sm-4 mb-4",
         style = "background-color: #FFFFFF; border-radius: var(--radius-md);",
         
-        # 1. DENOMINACIÓN OFICIAL DEL PROYECTO
-        div(
-          class = "card p-3 p-sm-4 mb-4 text-center shadow-sm border-0",
-          style = "background-color: #FDF9EE; border: 1px solid #EADBB6 !important; border-top: 4px solid #C59B27 !important; border-radius: var(--radius-md);",
-          tags$div(
-            class = "text-uppercase fw-bold mb-2",
-            style = "color: #174A3A; font-size: 0.95rem; letter-spacing: 0.5px;",
-            icon("folder-open"), " Denominación Oficial del Proyecto:"
-          ),
-          tags$p(
-            class = "mb-0 fw-bold",
-            style = "color: #1E293B; font-size: 1.12rem; line-height: 1.5; font-weight: 700; text-align: justify; text-align-last: center; text-justify: inter-word; max-width: 920px; margin-left: auto; margin-right: auto;",
-            paste0("«", proyecto_nombre, "»")
-          )
-        ),
-        
-        # ÓRGANO EJECUTOR INSTITUCIONAL DEL PDU
-        div(
-          class = "card p-3 p-sm-4 mb-4 shadow-sm border-0",
-          style = "background-color: #F0FDF4; border-left: 4px solid #16A34A !important; border-radius: var(--radius-md);",
-          div(
-            class = "d-flex align-items-center gap-3",
-            icon("building-columns", class = "fs-2 text-success"),
-            div(
-              tags$h6(class = "fw-bold text-success mb-1 text-uppercase", style = "letter-spacing: 0.5px;", "Órgano Ejecutor del Plan de Desarrollo Urbano:"),
-              tags$h5(class = "fw-bold text-dark mb-1", "Sub Gerencia de Planeamiento Urbano y Acondicionamiento Territorial"),
-              tags$p(class = "small text-muted mb-0",
-                "Unidad orgánica ejecutora de la Gerencia de Desarrollo Urbano y Rural (GDUR), responsable directa de la conducción, administración técnica, zonificación, emisión de fichas informativas y monitoreo del PDU Anta (2024 - 2034)."
-              )
-            )
-          )
-        ),
-        
         # SUSTENTO LEGAL Y TRANSPARENCIA DEL GEOVISOR
         div(
           class = "card p-3 p-sm-4 mb-4 shadow-sm border-0",
@@ -636,6 +603,31 @@ mod_informacion_pdu_ui <- function(proyecto_nombre = NULL) {
               )
             ),
             p(class = "small text-muted mb-0", "El PDU aplica este marco mediante su zonificación, clasificación del suelo, parámetros urbanísticos y sistema vial. Para trámites o licencias sobre predios específicos, aplican las ordenanzas municipales citadas y las normas del Reglamento Nacional de Edificaciones (RNE).")
+          )
+        ),
+        
+        # 8. TÉRMINOS DE USO, AVISO LEGAL Y POLÍTICA DE PRIVACIDAD (LEY N° 29733)
+        div(
+          class = "pt-3 border-top",
+          div(
+            class = "p-3 p-sm-4 rounded-3 border",
+            style = "background-color: #F8FAF9; border-left: 4px solid #174A3A !important;",
+            div(
+              class = "d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3",
+              div(
+                h5(class = "fw-bold mb-1", style = "color: #174A3A;", icon("shield-halved"), " Términos de Uso y Política de Privacidad"),
+                p(
+                  class = "small text-muted mb-0",
+                  "Consulte el marco legal de protección de datos personales (Ley N° 29733), el principio de minimización técnica y las condiciones del servicio gratuito del GeoVisor PDU Anta."
+                )
+              ),
+              tags$button(
+                type = "button",
+                class = "btn btn-outline-success fw-bold text-nowrap px-3 py-2",
+                onclick = "reabrirModalPrivacidad();",
+                icon("file-shield"), " Ver Términos y Privacidad"
+              )
+            )
           )
         )
       )
